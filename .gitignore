@@ -1,0 +1,7 @@
+*.pyc
+*~
+*SConstruct#
+.sconsign.dblite
+bare_git
+data
+.#SConstruct
