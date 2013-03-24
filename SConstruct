@@ -35,10 +35,13 @@ def randomise_essays(target, source, env):
     development sets.  source is a single file of essays.
     """
     essay_file_obj = open_with_unicode(source[0].path, None, 'r')
-    train_file_obj = open_with_unicode(target[0].path, None, 'w')
-    devel_file_obj = open_with_unicode(target[1].path, None, 'w')
+    m2_file_obj = open_with_unicode(source[1].path, None, 'r')
+    train_conll_file_obj = open_with_unicode(target[0].path, None, 'w')
+    train_m2_file_obj = open_with_unicode(target[1].path, None, 'w')
+    devel_conll_file_obj = open_with_unicode(target[2].path, None, 'w')
+    devel_m2_file_obj = open_with_unicode(target[3].path, None, 'w')
     rand_obj = random.Random(7)
-    er = EssayRandomiser.Randomiser(essay_file_obj, train_file_obj, devel_file_obj, rand_obj)
+    er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, train_conll_file_obj, train_m2_file_obj, devel_conll_file_obj, devel_m2_file_obj, rand_obj)
     er.randomise()
     return None
 
@@ -61,7 +64,7 @@ learning_sets_builder = Builder(action = randomise_essays)
 
 env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder})
 
-env.learning_sets([data_directory + set_name for set_name in ['training_set', 'development_set']], data_directory + 'corpus')
+env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_gold', 'development_set', 'development_set_gold']], [data_directory + 'corpus', data_directory + 'gold'])
 
-env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'development_set']])
+env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'training_set_gold', 'development_set', 'development_set_gold']])
 

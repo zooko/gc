@@ -9,9 +9,6 @@ class EssayRandomiserTest(unittest.TestCase):
 
     def test_randomise(self):
 
-        r = random.Random(1)
-
-
         e1 = ["829     0       0       0       CREATING        NNP     3       nn      (ROOT(NP*\n",
               "829     0       0       1       A       NNP     3       nn      *\n",
               "829     0       0       2       HABITABLE       NNP     3       nn      *\n",
@@ -113,14 +110,30 @@ class EssayRandomiserTest(unittest.TestCase):
 
         essay_file_obj = e1 + ['\n'] + e2 + ['\n'] + e3 + ['\n'] + e4
 
-        train_file_obj = StringIO.StringIO()
-        devel_file_obj = StringIO.StringIO()
+        m2_1 = "S CREATING A HABITABLE ENVIRONMENT\n\n" + "S Humans have many basic needs\n"
+        m2_2 = "S The Factors that Shaped Biometrics\n\n" + "S Identification has become more and more important in our society .\n"
+        m2_3 = "S Engineers design products or systems that meet human needs .\n\n" + "S One current human need that should be given priority is the search for renewable resources .\n\n" + "S Everywhere in the world , fuel is used extensively .\n"
+        m2_4 = "S Title : Obstacles for engineering design in China\n\n" + "S Engineering design is defined as a process that brings ideas or theories into physical representations which satisfies human needs .\n" + "A 16 17|||SVA|||satisfy|||REQUIRED|||-NONE-|||0\n" + "\n"
 
-        er = EssayRandomiser.Randomiser(essay_file_obj, train_file_obj, devel_file_obj, r)
+        m2_file_obj = StringIO.StringIO(m2_1 + '\n' + m2_2 + '\n' + m2_3 + '\n' + m2_4)
+
+        expected_train_m2 = m2_1 + '\n' + m2_3 + '\n' + m2_4
+        expected_devel_m2 = m2_2 + '\n'
+
+        train_conll_file_obj = StringIO.StringIO()
+        train_m2_file_obj = StringIO.StringIO()
+        devel_conll_file_obj = StringIO.StringIO()
+        devel_m2_file_obj = StringIO.StringIO()
+
+        r = random.Random(1)
+
+        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, train_conll_file_obj, train_m2_file_obj, devel_conll_file_obj, devel_m2_file_obj, r)
         er.randomise()
 
-        assert train_file_obj.getvalue() == "".join(e1+['\n']+e3+['\n']+e4), "BEGIN\n" + "".join(e1+['\n']+e3+['\n']+e4) + "MID\n" + train_file_obj.getvalue() + "END\n"
-        assert devel_file_obj.getvalue() == "".join(e2+['\n']), "".join(e2+['\n']) + devel_file_obj.getvalue()
+        assert train_conll_file_obj.getvalue() == "".join(e1+['\n']+e3+['\n']+e4), "BEGIN\n" + "".join(e1+['\n']+e3+['\n']+e4) + "MID\n" + train_conll_file_obj.getvalue() + "END\n"
+        assert train_m2_file_obj.getvalue() == expected_train_m2, "BEGIN\n" + train_m2_file_obj.getvalue() + "MID\n" + expected_train_m2 + "END\n"
+        assert devel_conll_file_obj.getvalue() == "".join(e2+['\n']), "".join(e2+['\n']) + devel_conll_file_obj.getvalue()
+        assert devel_m2_file_obj.getvalue() == expected_devel_m2, "BEGIN\n" + devel_m2_file_obj.getvalue() + "MID\n" + expected_devel_m2 + "END\n"
 
 if __name__ == '__main__':
     unittest.main()
