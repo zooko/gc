@@ -31,3 +31,13 @@ class SentencePath:
         path_tuple_list.reverse()
         return '<%s %s>' % (self.__class__.__name__, repr(path_tuple_list))
 
+
+def sort_and_prune(beam_element_list, width):
+    """
+    beam_element_list is a list of objects that can be sorted.  It has
+    a maximum width (list length).  sort_and_prune sorts the list and
+    keeps the highest items.
+    """
+    beam_element_list.sort()
+    return beam_element_list[-width:]
+        

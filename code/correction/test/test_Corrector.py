@@ -2,7 +2,7 @@
 # test_Corrector.py
 
 from code.correction import Corrector
-import unittest 
+import unittest
 
 class SentencePathTest(unittest.TestCase):
 
@@ -20,12 +20,20 @@ class SentencePathTest(unittest.TestCase):
         a_list = [new_path, newer_path, path]
         a_list.sort()
         self.assertListEqual(a_list, [newer_path, new_path, path], a_list)
-        
+
 class BeamTest(unittest.TestCase):
 
     def test_beam(self):
-        self.skipTest("")
-        
+
+        path = Corrector.SentencePath('This', -.7, None)
+        new_path = Corrector.SentencePath('is', -.8, path)
+        newer_path = Corrector.SentencePath('fun', -1.1, new_path)
+        a_different_path = Corrector.SentencePath("isn't", -.9, path)
+
+        beam = Corrector.sort_and_prune([path, new_path, newer_path, a_different_path], 3)
+        self.assertListEqual(beam, [a_different_path, new_path, path], beam)
+
+
 
 if __name__ == '__main__':
     unittest.main()
