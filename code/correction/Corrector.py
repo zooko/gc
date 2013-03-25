@@ -15,13 +15,13 @@ class SentencePath:
     def __cmp__(self, other):
         return cmp(self.prob, other.prob)
     def tokens(self):
-        reverse_tokens = [self.word]
+        tokens = [self.word]
         p = self.prior
         while p:
-            reverse_tokens.append(p.word)
+            tokens.append(p.word)
             p = p.prior
-        reverse_tokens.reverse()
-        return reverse_tokens
+        tokens.reverse()
+        return tokens
     def __repr__(self):
         path_tuple_list = [(self.word, self.prob)]
         p = self.prior
