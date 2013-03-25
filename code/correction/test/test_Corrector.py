@@ -25,6 +25,9 @@ class BeamTest(unittest.TestCase):
 
     def test_beam(self):
 
+        beam = Corrector.sort_and_prune([12, 11, 0, 5, 15, 1, -4], 5)
+        self.assertListEqual(beam, [1, 5, 11, 12, 15], beam)
+
         path = Corrector.SentencePath('This', -.7, None)
         new_path = Corrector.SentencePath('is', -.8, path)
         newer_path = Corrector.SentencePath('fun', -1.1, new_path)
