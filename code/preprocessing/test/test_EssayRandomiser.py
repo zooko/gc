@@ -1,4 +1,4 @@
-# L. Amber Wilcox-O'Hearn 2011
+# L. Amber Wilcox-O'Hearn 2013
 # test_EssayRandomiser.py
 
 from code.preprocessing import EssayRandomiser

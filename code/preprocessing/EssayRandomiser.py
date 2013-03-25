@@ -1,4 +1,4 @@
-# L. Amber Wilcox-O'Hearn 2011
+# L. Amber Wilcox-O'Hearn 2013
 # EssayRandomiser.py
 
 # The CoNLL 2013 Shared Task Corpus includes a pre-processed set of
