@@ -4,38 +4,37 @@
 from code.correction import Corrector
 import unittest
 
-class SentencePathTest(unittest.TestCase):
-
-    def test_sentence_path(self):
-        path = Corrector.SentencePath('This', -.7, None)
-        new_path = Corrector.SentencePath('is', -.8, path)
-        newer_path = Corrector.SentencePath('fun', -1.1, new_path)
-
-        self.assertEqual(repr(path), "<SentencePath [('This', -0.7)]>", path)
-        self.assertEqual(repr(new_path), "<SentencePath [('This', -0.7), ('is', -0.8)]>", new_path)
-        self.assertEqual(repr(newer_path), "<SentencePath [('This', -0.7), ('is', -0.8), ('fun', -1.1)]>", newer_path)
-        self.assertListEqual(path.tokens(), ['This'], path.tokens())
-        self.assertListEqual(new_path.tokens(), ['This', 'is'], new_path.tokens())
-        self.assertListEqual(newer_path.tokens(), ['This', 'is', 'fun'], newer_path.tokens())
-        a_list = [new_path, newer_path, path]
-        a_list.sort()
-        self.assertListEqual(a_list, [newer_path, new_path, path], a_list)
 
 class BeamTest(unittest.TestCase):
 
-    def test_beam(self):
+    def test_beam_search(self):
 
-        beam = Corrector.sort_and_prune([12, 11, 0, 5, 15, 1, -4], 5)
-        self.assertListEqual(beam, [1, 5, 11, 12, 15], beam)
+        def probability_of_error_function(tokens):
+            return 0.01
+        def variation_generator(tokens):
+            token = tokens[-1]
+            if len(token) > 2:
+                return []
+            else:
+                return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ]
+        def path_probability_function(previous_prob, tokens):
+            num_a_s = tokens[-1].count('a')
+            if len(tokens) > 3 and tokens[1] == 'isd':
+                return previous_prob + 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
+            return previous_prob + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
 
-        path = Corrector.SentencePath('This', -.7, None)
-        new_path = Corrector.SentencePath('is', -.8, path)
-        newer_path = Corrector.SentencePath('fun', -1.1, new_path)
-        a_different_path = Corrector.SentencePath("isn't", -.9, path)
+        width = 5
+        sentence = ['This', 'is', 'a', 'bad', 'sentence', '.']
+        best_sentence = Corrector.beam_search(sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        self.assertListEqual(best_sentence, ['This', 'isa', 'aa', 'bad', 'sentence', '.a'])
 
-        beam = Corrector.sort_and_prune([path, new_path, newer_path, a_different_path], 3)
-        self.assertListEqual(beam, [a_different_path, new_path, path], beam)
+        width = 50
+        best_sentence = Corrector.beam_search(sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        self.assertListEqual(best_sentence, ['This', 'isd', 'aa', 'bad', 'sentence', '.a'])
 
+        sentence = ['This', 'isn\'t', 'bad', '...']
+        best_sentence = Corrector.beam_search(sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        self.assertListEqual(best_sentence, ['This', 'isn\'t', 'bad', '...'])
 
 
 if __name__ == '__main__':
