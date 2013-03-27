@@ -8,7 +8,7 @@ del sys.modules['pickle']
 
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
 
-from code.preprocessing import EssayRandomiser
+from code.preprocessing import EssayRandomiser, GoldGenerator
 
 def open_with_unicode(file_name, compression_type, mode):
     assert compression_type in [None, 'gzip', 'bzip2']
@@ -48,6 +48,15 @@ def randomise_essays(target, source, env):
     er.randomise()
     return None
 
+def training_m2_5_to_gold(target, source, env):
+    """
+    """
+    train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
+    train_gold_file_obj = open_with_unicode(target[0].path, None, 'w')
+    GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj)
+    return None
+    
+
 
 # Get commandline configuration:
 
@@ -64,9 +73,14 @@ if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
 
 learning_sets_builder = Builder(action = randomise_essays)
+training_gold_builder = Builder(action = training_m2_5_to_gold)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
 env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']])
+
+env.training_gold([data_directory + 'training_set_gold'], [data_directory + 'training_set_m2_5'])
+
+env.Alias('training_gold', data_directory + 'training_set_gold')
