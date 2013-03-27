@@ -9,6 +9,7 @@ del sys.modules['pickle']
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
 
 from code.preprocessing import EssayRandomiser, GoldGenerator
+from code.language_modelling import VocabularyCutter
 
 def open_with_unicode(file_name, compression_type, mode):
     assert compression_type in [None, 'gzip', 'bzip2']
@@ -48,19 +49,30 @@ def randomise_essays(target, source, env):
     er.randomise()
     return None
 
-def training_m2_5_to_gold(target, source, env):
+def create_vocabularies(target, source, env):
     """
     """
     train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
-    train_gold_file_obj = open_with_unicode(target[0].path, None, 'w')
-    GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj)
+    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', '-', '-sort', '-write', data_directory + 'counts'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    GoldGenerator.correct_file(train_m2_5_file_obj, codecs.getwriter('utf-8')(srilm_ngram_counts.stdin))
+    srilm_ngram_counts.stdin.close()
+    srilm_ngram_counts.wait()
+
+    for i in range(len(vocabulary_sizes)):
+        unigram_counts_file_obj = open_with_unicode(data_directory + 'counts', None, 'r')
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+        assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
+        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
+        cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        cutter.cut_vocabulary(int(float(size)*1000))
+
     return None
     
-
-
 # Get commandline configuration:
 
 data_directory = ''
+vocabulary_sizes = []
 TEST = False
 
 try:
@@ -71,16 +83,21 @@ except:
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
+    vocabulary_sizes = [0.05, 0.5]
+else:
+    for key, value in ARGLIST:
+        if key == "vocabulary_size":
+            vocabulary_sizes.append(value)
 
 learning_sets_builder = Builder(action = randomise_essays)
-training_gold_builder = Builder(action = training_m2_5_to_gold)
+vocabulary_files_builder = Builder(action = create_vocabularies)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files': vocabulary_files_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
 env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']])
 
-env.training_gold([data_directory + 'training_set_gold'], [data_directory + 'training_set_m2_5'])
+env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'training_set_m2_5'])
 
-env.Alias('training_gold', data_directory + 'training_set_gold')
+env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
