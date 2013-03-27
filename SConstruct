@@ -32,7 +32,7 @@ def open_with_unicode(file_name, compression_type, mode):
 
 def randomise_essays(target, source, env):
     """
-    target is a list of files corresponding to the training and 
+    target is a list of files corresponding to the training and
     development sets.  source is a single file of essays.
     """
     essay_file_obj = open_with_unicode(source[0].path, None, 'r')
@@ -68,7 +68,24 @@ def create_vocabularies(target, source, env):
         cutter.cut_vocabulary(int(float(size)*1000))
 
     return None
-    
+
+def create_trigram_models(target, source, env):
+
+    train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
+    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-tolower', '-text', '-', '-sort', '-write', data_directory + 'trigram_counts'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    GoldGenerator.correct_file(train_m2_5_file_obj, codecs.getwriter('utf-8')(srilm_ngram_counts.stdin))
+    srilm_ngram_counts.stdin.close()
+    srilm_ngram_counts.wait()
+
+    for i in range(len(vocabulary_sizes)):
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+        trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
+        assert target[i].path == trigram_model_name, target[i].path
+        srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-read', data_directory + 'trigram_counts', '-lm', trigram_model_name])
+
+    return None
+
 # Get commandline configuration:
 
 data_directory = ''
@@ -91,8 +108,9 @@ else:
 
 learning_sets_builder = Builder(action = randomise_essays)
 vocabulary_files_builder = Builder(action = create_vocabularies)
+trigram_models_builder = Builder(action = create_trigram_models)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files': vocabulary_files_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -101,3 +119,7 @@ env.Alias('learning_sets', [data_directory + set_name for set_name in ['training
 env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'training_set_m2_5'])
 
 env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+
+env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set_m2_5'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+
+env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
