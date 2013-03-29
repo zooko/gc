@@ -31,6 +31,13 @@ class StanfordTaggerPipeTest(unittest.TestCase):
         result = tagger_pipe.stdout.readline()
         self.assertEqual(result, '\n', repr(result))
 
+        tags_list = tagger_pipe.tags_list("Hello, World.")
+        self.assertEqual(tags_list, ["UH", ",", "NNP", "."], tags_list)
+        tags_list = tagger_pipe.tags_list("Hello again, World.")
+        self.assertEqual(tags_list, ["UH", "RB", ",", "NNP", "."], tags_list)
+        tags_list = tagger_pipe.tags_list("Hello, World.")
+        self.assertEqual(tags_list, ["UH", ",", "NNP", "."], tags_list)
+
 if __name__ == '__main__':
     unittest.main()
 

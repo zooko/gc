@@ -9,6 +9,13 @@ class StanfordTaggerPipe:
         self.stdin = self.tagger_pipe.stdin
         self.stdout = self.tagger_pipe.stdout
 
+    def tags_list(self, token_string):
+        self.tagger_pipe.stdin.write(token_string + '\n')
+        result = self.tagger_pipe.stdout.readline()
+        newline = self.tagger_pipe.stdout.readline()
+        assert(newline == '\n'), repr(newline)
+        return [y[1] for y in [x.split('_') for x in result.split()]]
+
     def shutdown(self):
         if hasattr(self, "tagger_pipe"):
             if hasattr(self.tagger_pipe, "pid") and self.tagger_pipe.pid:
