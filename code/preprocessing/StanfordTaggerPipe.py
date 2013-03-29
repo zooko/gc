@@ -29,7 +29,7 @@ class StanfordTaggerPipe:
             newline = self.tagger_pipe.stdout.readline()
             assert(newline == '\n'), repr(newline)
             result_tokens += result.split()
-        return [y[-1] for y in [x.rpartition('_') for x in result_tokens]]
+        return ['_' + y[-1] for y in [x.rpartition('_') for x in result_tokens]]
 
     def words_and_tags_list(self, token_string):
         self.stdin_byte_writer.write(token_string + '\n')
@@ -46,7 +46,7 @@ class StanfordTaggerPipe:
             assert(newline == '\n'), repr(newline)
             result_tokens += result.split()
 
-        return [(y[0], y[-1]) for y in [x.rpartition('_') for x in result_tokens]]
+        return [(y[0], '_' + y[-1]) for y in [x.rpartition('_') for x in result_tokens]]
 
     def shutdown(self):
         if hasattr(self, "tagger_pipe"):
