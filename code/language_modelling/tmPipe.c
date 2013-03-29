@@ -48,8 +48,7 @@ main(int argc, char** argv) {
                         fflush(stdout);
                 }
 
-                p = inputbuf;
-                if (*p == 'o'){ // unigram backoff
+                else if (*p == 'o'){ // unigram backoff
                         p+=2; // command and space
                         JSLG(ptr, UB, p);
                         if (ptr == NULL) {
