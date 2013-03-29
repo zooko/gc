@@ -96,15 +96,15 @@ main(int argc, char** argv) {
                         }
                 }
 
-		else if (*p == 'U') { // is this a unk model?
+		else if (*p == 'U') { // is this a unk model? prob of unk?
 			*p = UNKBYTESTR[0];
 			JSLG(ptr, UP, p);
                         if (ptr == NULL) {
-                                printf("0\n");
+                                printf("None\n");
                                 fflush(stdout);
                         }
                         else {
-                                printf("1\n");
+                                printf("%f\n", *(float*)ptr);
                                 fflush(stdout);
                         }
 		}
