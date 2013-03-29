@@ -13,6 +13,17 @@ class TMPipe:
         self.stdin.write("v " + token + '\n')
         return int(self.stdout.readline())
 
+    def unigram_probability(self, token):
+        if self.in_vocabulary(token):
+            self.stdin.write("u " + token + '\n')
+            return float(self.stdout.readline())
+        else:
+            self.stdin.write("U\n") # Is this an unk model?
+            try:
+                return float(self.stdout.readline())
+            except ValueError, exp:
+                return None
+
     def shutdown(self):
         if hasattr(self, "tmpipe"):
             if hasattr(self.tmpipe, "pid") and self.tmpipe.pid:

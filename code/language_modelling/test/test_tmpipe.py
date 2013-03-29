@@ -3,17 +3,28 @@
 from code.language_modelling import tmpipe
 import unittest, sys
 
-EPSILON = .0000001
-
 tmpipe_obj = tmpipe.TMPipe("code/language_modelling/tmPipe", "code/language_modelling/test/pos_trigram_model_0.05K.arpa")
 
-class TmpipeTest(unittest.TestCase):
+class TmpipeUnklessTest(unittest.TestCase):
 
     def test_in_vocabulary(self):
         assert tmpipe_obj.in_vocabulary('"')
         assert tmpipe_obj.in_vocabulary("'s")
         assert tmpipe_obj.in_vocabulary('with')
         assert not tmpipe_obj.in_vocabulary('wax')
+
+    def test_unigram_probability(self):
+        probability = tmpipe_obj.unigram_probability('"')
+        self.assertAlmostEqual(probability, -2.589533, probability)
+
+        probability = tmpipe_obj.unigram_probability("'s")
+        self.assertAlmostEqual(probability, -2.52453, probability)
+
+        probability = tmpipe_obj.unigram_probability('with')
+        self.assertAlmostEqual(probability, -2.395761, probability)
+
+        probability = tmpipe_obj.unigram_probability('wax')
+        self.assertIs(probability, None, probability)
 
 
     def test_trigram_probability(self):
@@ -28,21 +39,6 @@ class TmpipeTest(unittest.TestCase):
         l = tmpipeobj.stdout.readline()
         assert abs(-2.440987 - float(l)) < EPSILON, l
 
-    def test_unigram_probability(self):
-        self.skipTest("")
-        tmpipeobj.stdin.write('u "\n')
-        l = tmpipeobj.stdout.readline()
-        assert abs(-2.187073 - float(l)) < EPSILON, l
-        tmpipeobj.stdin.write('u &\n')
-        l = tmpipeobj.stdout.readline()
-        assert abs(-2.799857 - float(l)) < EPSILON, l
-        tmpipeobj.stdin.write("u it\n")
-        l = tmpipeobj.stdout.readline()
-        assert abs(-2.1371 - float(l)) < EPSILON, l
-        tmpipeobj.stdin.write("u zero\n")
-        l = tmpipeobj.stdout.readline()
-        assert abs(-3.799857 - float(l)) < EPSILON, l
-        
     def test_unigram_backoff(self):
         self.skipTest("")
         tmpipeobj.stdin.write("o it\n")
