@@ -5,3 +5,8 @@
 bare_git
 data
 .#SConstruct
+*.o
+*.d
+*.a
+tmPipe
+tmp
