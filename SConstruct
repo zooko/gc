@@ -8,7 +8,7 @@ del sys.modules['pickle']
 
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
 
-from code.preprocessing import EssayRandomiser, GoldGenerator
+from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe, POSFiller
 from code.language_modelling import VocabularyCutter
 
 def open_with_unicode(file_name, compression_type, mode):
@@ -100,6 +100,49 @@ def create_trigram_models(target, source, env):
 
     return None
 
+def create_pos_trigram_models(target, source, env):
+
+    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
+
+    train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
+    vocabulary_lists = []
+    srilm_make_lms = []
+    byte_writers = []
+    for i in range(len(pos_vocabulary_sizes)):
+        size = pos_vocabulary_sizes[i]
+        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'r')
+        vocabulary_list = [x.strip() for x in vocabulary_file_obj.readlines()]
+        vocabulary_file_obj.close()
+        print vocabulary_list
+        vocabulary_lists.append(vocabulary_list)
+
+        trigram_model_name = data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa'
+        assert target[i].path == trigram_model_name, target[i].path
+        srilm_make_lms.append(subprocess.Popen(['ngram-count', '-tolower', '-kndiscount3', '-debug', '2', '-text', '-', '-lm', trigram_model_name], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+        byte_writers.append(codecs.getwriter('utf-8')(srilm_make_lms[i].stdin))
+
+    line_number = 1
+    for line in train_gold_file_obj:
+        filled_tokens = POSFiller.fill_sentence([l.__contains__ for l in vocabulary_lists], tagger_pipe.tags_list, line.strip())
+        if line_number % 100:
+            print line_number
+            print filled_tokens
+        for i in range(len(byte_writers)):
+            byte_writers[i].write(" ".join(filled_tokens[i])+'\n')
+        line_number += 1
+    for srilm_make_lm in srilm_make_lms:
+        srilm_make_lm.stdin.close()
+        srilm_make_lm.wait()
+
+    return None
+
+
+# Hard coding this for now... TODO make variables
+stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
+module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
+model_path = 'stanford-tagger/english-bidirectional-distsim.tagger'
+
 # Get commandline configuration:
 
 data_directory = ''
@@ -116,7 +159,7 @@ except:
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
     vocabulary_sizes = [0.1, 0.5]
-    pos_vocabulary_sizes = [0.05]
+    pos_vocabulary_sizes = [0.05, 0.1]
 else:
     for key, value in ARGLIST:
         if key == "vocabulary_size":
@@ -133,8 +176,9 @@ learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
+pos_trigram_models_builder = Builder(action = create_pos_trigram_models)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -151,3 +195,7 @@ env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size i
 env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set_gold'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+
+env.pos_trigram_models([data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes], [data_directory + 'training_set_gold'] +  [data_directory + str(size) + 'K.vocab' for size in pos_vocabulary_sizes])
+
+env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes])
