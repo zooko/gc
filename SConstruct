@@ -114,7 +114,6 @@ def create_pos_trigram_models(target, source, env):
         vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'r')
         vocabulary_list = [x.strip() for x in vocabulary_file_obj.readlines()]
         vocabulary_file_obj.close()
-        print vocabulary_list
         vocabulary_lists.append(vocabulary_list)
 
         trigram_model_name = data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa'
@@ -123,11 +122,11 @@ def create_pos_trigram_models(target, source, env):
         byte_writers.append(codecs.getwriter('utf-8')(srilm_make_lms[i].stdin))
 
     line_number = 1
+    print repr(create_pos_trigram_models), "Progress dots per 100 sentences."
     for line in train_gold_file_obj:
         filled_tokens = POSFiller.fill_sentence([l.__contains__ for l in vocabulary_lists], tagger_pipe.tags_list, line.strip())
-        if line_number % 100:
-            print line_number
-            print filled_tokens
+        if not line_number % 100:
+            print '.',
         for i in range(len(byte_writers)):
             byte_writers[i].write(" ".join(filled_tokens[i])+'\n')
         line_number += 1
@@ -169,8 +168,6 @@ else:
 
 all_vocabulary_sizes = list(set(vocabulary_sizes)|set(pos_vocabulary_sizes))
 all_vocabulary_sizes.sort(reverse=True)
-
-print vocabulary_sizes, pos_vocabulary_sizes, all_vocabulary_sizes
 
 learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
