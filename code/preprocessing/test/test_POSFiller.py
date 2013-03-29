@@ -8,8 +8,11 @@ class POSFillerTest(unittest.TestCase):
 
     def test_pos_fill_sentence(self):
 
-        def in_vocabulary(token):
+        def in_vocabulary_0(token):
             return token != "will"
+
+        def in_vocabulary_1(token):
+            return token != "will" and token != "caused"
 
         def pos_tagger(sentence):
             psos = []
@@ -22,8 +25,8 @@ class POSFillerTest(unittest.TestCase):
                 
                           
         sentence = " ".join(["This", "will", "caused", "problems", "."])
-        filled = POSFiller.fill_sentence(in_vocabulary, pos_tagger, sentence)
-        self.assertListEqual(filled, ["This", "VBN", "caused", "problems", "."])
+        filled = POSFiller.fill_sentence([in_vocabulary_0, in_vocabulary_1], pos_tagger, sentence)
+        self.assertListEqual(filled, [["This", "VBN", "caused", "problems", "."], ["This", "VBN", "NN", "problems", "."]], filled)
         
         
 
