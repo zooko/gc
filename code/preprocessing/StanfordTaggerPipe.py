@@ -1,27 +1,52 @@
 # L. Amber Wilcox-O'Hearn 2013
 # StanfordTaggerPipe.py
 
-import os, subprocess
+import os, subprocess, codecs
 
 class StanfordTaggerPipe:
     def __init__(self, stanford_tagger_path, module_path, model_path):
         self.tagger_pipe = subprocess.Popen(['java', '-mx1g', '-cp', stanford_tagger_path, module_path, '-model', model_path ], stdin=-1, stdout=-1)
-        self.stdin = self.tagger_pipe.stdin
+        self.stdin_byte_writer = codecs.getwriter('utf-8')(self.tagger_pipe.stdin)
         self.stdout = self.tagger_pipe.stdout
 
     def tags_list(self, token_string):
-        self.tagger_pipe.stdin.write(token_string + '\n')
+        self.stdin_byte_writer.write(token_string + '\n')
         result = self.tagger_pipe.stdout.readline()
         newline = self.tagger_pipe.stdout.readline()
         assert(newline == '\n'), repr(newline)
-        return [y[1] for y in [x.split('_') for x in result.split()]]
+
+        # The following is to take care of (most) cases when the
+        # tagger believes there is more than one sentence on a line.
+        # Since my program can't know in general how much output to
+        # expect, and can't just wait in case of more, I am counting
+        # tokens, and trying for another line if there don't seem to
+        # be enough.
+
+        tokens = token_string.split()
+        result_tokens = result.split()
+        while len(result_tokens) < len(tokens):
+            result = self.tagger_pipe.stdout.readline()
+            newline = self.tagger_pipe.stdout.readline()
+            assert(newline == '\n'), repr(newline)
+            result_tokens += result.split()
+        return [y[-1] for y in [x.rpartition('_') for x in result_tokens]]
 
     def words_and_tags_list(self, token_string):
-        self.tagger_pipe.stdin.write(token_string + '\n')
+        self.stdin_byte_writer.write(token_string + '\n')
         result = self.tagger_pipe.stdout.readline()
         newline = self.tagger_pipe.stdout.readline()
         assert(newline == '\n'), repr(newline)
-        return [x.split('_') for x in result.split()]
+        tokens = token_string.split()
+        result_tokens = result.split()
+
+        # See comment in tags_list
+        while len(result_tokens) < len(tokens):
+            result = self.tagger_pipe.stdout.readline()
+            newline = self.tagger_pipe.stdout.readline()
+            assert(newline == '\n'), repr(newline)
+            result_tokens += result.split()
+
+        return [(y[0], y[-1]) for y in [x.rpartition('_') for x in result_tokens]]
 
     def shutdown(self):
         if hasattr(self, "tagger_pipe"):
