@@ -15,7 +15,7 @@ class StanfordTaggerPipeTest(unittest.TestCase):
     def setUp(self):
 
         self.s0 = "Hello , World .\n"
-        self.s1 = "Hello again, World.\n"
+        self.s1 = "Hello again , World .\n"
         self.s2 = "- { http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php } [ HYPERLINK : http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php ]\n"
 
     def test_stanford_tagger_pipe(self):
@@ -64,7 +64,7 @@ class StanfordTaggerPipeTest(unittest.TestCase):
 
     def test_multi_sentence_line(self):
         
-        multi_sentence = 'I am.  More than one.'
+        multi_sentence = 'I am .  More than one .\n'
         tags_list = tagger_pipe.tags_list(multi_sentence)
         self.assertEqual(tags_list, ['_PRP', '_VBP', '_.', '_JJR', '_IN', '_CD', '_.'], tags_list)
         words_and_tags_list = tagger_pipe.words_and_tags_list(multi_sentence)
