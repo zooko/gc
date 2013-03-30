@@ -24,6 +24,19 @@ class TMPipe:
             except ValueError, exp:
                 return None
 
+    def trigram_probability(self, tokens):
+        self.stdin.write("U\n") # Is this an unk model?
+        if self.stdout.readline() == "None\n":
+            if reduce(lambda x, y: x and y, [self.in_vocabulary(t) for t in tokens]):
+                self.stdin.write("t " + " ".join(tokens) + '\n')
+                return float(self.stdout.readline())
+            else:
+                return None
+        else:
+            self.stdin.write("t " + " ".join(tokens) + '\n')
+            return float(self.stdout.readline())
+
+
     def shutdown(self):
         if hasattr(self, "tmpipe"):
             if hasattr(self.tmpipe, "pid") and self.tmpipe.pid:
