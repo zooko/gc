@@ -15,7 +15,7 @@ class StanfordTaggerPipeTest(unittest.TestCase):
     def setUp(self):
 
         self.s0 = "Hello , World .\n"
-        self.s1 = "Hello again, World.\n"
+        self.s1 = "Hello again , World .\n"
         self.s2 = "- { http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php } [ HYPERLINK : http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php ]\n"
 
     def test_stanford_tagger_pipe(self):
