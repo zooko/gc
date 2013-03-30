@@ -29,6 +29,30 @@ class TmpipeUnklessTest(unittest.TestCase):
         probability = unkless_tmpipe_obj.unigram_probability('wax')
         self.assertIs(probability, None, msg=probability)
 
+    def test_trigram_probability(self):
+        """
+        Testing all backoff conditions.  See TrigramModel.h for formulas.
+        """
+        # attested
+        probability = unkless_tmpipe_obj.trigram_probability(["that", "with","the"])
+        self.assertAlmostEqual(probability, -0.4422206, DECIMAL_PLACES, msg=probability)
+        # backedoff w1 w2 attested, w2 w3 attested
+        probability = unkless_tmpipe_obj.trigram_probability(["and", "that","with"])
+        self.assertAlmostEqual(probability, -2.333839, DECIMAL_PLACES, msg=probability)
+        # backedoff w1 w2 attested, w2 w3 not
+        probability = unkless_tmpipe_obj.trigram_probability(["and", "that","and"])
+        self.assertAlmostEqual(probability, -3.66923311, DECIMAL_PLACES, msg=probability)
+        # backedoff w1 w2 not attested, w2 w3 attested
+        probability = unkless_tmpipe_obj.trigram_probability(["the", "that","government"])
+        self.assertAlmostEqual(probability, -2.759567, DECIMAL_PLACES, msg=probability)
+        # backedoff w1 w2 not attested, w2 w3 not attested
+        probability = unkless_tmpipe_obj.trigram_probability(["the", "that","and"])
+        self.assertAlmostEqual(probability, -3.637584, DECIMAL_PLACES, msg=probability)
+        # Contains oov
+        probability = unkless_tmpipe_obj.trigram_probability(["that", "they","understood"])
+        self.assertIs(probability, None, msg=probability)
+
+
 class TmpipeUnkfulTest(unittest.TestCase):
 
     def test_unigram_probability(self):
