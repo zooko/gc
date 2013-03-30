@@ -102,7 +102,7 @@ def create_trigram_models(target, source, env):
 
 def create_pos_trigram_models(target, source, env):
 
-    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
+    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
 
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     vocabulary_lists = []
@@ -138,9 +138,7 @@ def create_pos_trigram_models(target, source, env):
 
 
 # Hard coding this for now... TODO make variables
-stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
-model_path = 'stanford-tagger/english-bidirectional-distsim.tagger'
 
 # Get commandline configuration:
 
