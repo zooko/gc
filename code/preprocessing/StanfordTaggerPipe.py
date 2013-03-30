@@ -28,20 +28,22 @@ class StanfordTaggerPipe:
         newline = self.tagger_pipe.stdout.readline()
         assert(newline == '\n'), repr(newline)
 
-        # The following is to take care of (most) cases when the
-        # tagger believes there is more than one sentence on a line.
-        # Since my program can't know in general how much output to
-        # expect, and can't just wait in case of more, I am counting
-        # tokens, and trying for another line if there don't seem to
-        # be enough.
+        '''
+        The following is to take care of (most) cases when the
+        tagger believes there is more than one sentence on a line.
+        Since my program can't know in general how much output to
+        expect, and can't just wait in case of more, I am counting
+        tokens, and trying for another line if there don't seem to
+        be enough.
+        '''
 
-#        tokens = token_string.split()
+        tokens = token_string.split()
         result_tokens = result.split()
-#        while len(result_tokens) < len(tokens):
-#            result = self.tagger_pipe.stdout.readline()
-#            newline = self.tagger_pipe.stdout.readline()
-#            assert(newline == '\n'), repr(newline)
-#            result_tokens += result.split()
+        while len(result_tokens) < len(tokens):
+            result = self.tagger_pipe.stdout.readline()
+            newline = self.tagger_pipe.stdout.readline()
+            assert(newline == '\n'), repr(newline)
+            result_tokens += result.split()
         return ['_' + y[-1] for y in [x.rpartition('_') for x in result_tokens]]
 
     def words_and_tags_list(self, token_string):
@@ -49,15 +51,15 @@ class StanfordTaggerPipe:
         result = self.tagger_pipe.stdout.readline()
         newline = self.tagger_pipe.stdout.readline()
         assert(newline == '\n'), repr(newline)
-#        tokens = token_string.split()
+        tokens = token_string.split()
         result_tokens = result.split()
 
         # See comment in tags_list
-#        while len(result_tokens) < len(tokens):
-#            result = self.tagger_pipe.stdout.readline()
-#            newline = self.tagger_pipe.stdout.readline()
-#            assert(newline == '\n'), repr(newline)
-#            result_tokens += result.split()
+        while len(result_tokens) < len(tokens):
+            result = self.tagger_pipe.stdout.readline()
+            newline = self.tagger_pipe.stdout.readline()
+            assert(newline == '\n'), repr(newline)
+            result_tokens += result.split()
 
         return [(y[0], '_' + y[-1]) for y in [x.rpartition('_') for x in result_tokens]]
 

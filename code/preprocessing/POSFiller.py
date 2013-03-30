@@ -13,6 +13,12 @@ def fill_sentence(in_vocabulary_functions, pos_tagger_function, sentence):
             if in_vocabulary_functions[v](tokens[i]):
                 filled[v].append(tokens[i])
             else:
-                filled[v].append(psos[i])
+                try:
+                    filled[v].append(psos[i])
+                except IndexError, e:
+                    print sentence
+                    print len(tokens), tokens
+                    print len(psos), psos
+                    raise e
     
     return filled

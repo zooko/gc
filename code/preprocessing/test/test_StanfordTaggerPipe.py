@@ -63,6 +63,15 @@ class StanfordTaggerPipeTest(unittest.TestCase):
              [('-', '_:'), ('-LRB-', '_-LRB-'), ('http', '_JJ'), (':', '_:'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', '_NN'), ('-RRB-', '_-RRB-'), ('-LRB-', '_-LRB-'), ('HYPERLINK', '_NN'), (':', '_:'), ('http', '_NN'), (':', '_:'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', '_NN'), ('-RRB-', '_-RRB-')], \
              words_and_tags_list)
 
+    def test_multi_sentence_line(self):
+        multi_sentence = 'I am .  More than one .\n'
+        tags_list = tagger_pipe.tags_list(multi_sentence)
+        self.assertEqual(tags_list, ['_PRP', '_VBP', '_.', '_JJR', '_IN', '_CD', '_.'], tags_list)
+        words_and_tags_list = tagger_pipe.words_and_tags_list(multi_sentence)
+        self.assertListEqual(words_and_tags_list, \
+             [('I', '_PRP'), ('am', '_VBP'), ('.', '_.'), ('More', '_JJR'), ('than', '_IN'), ('one', '_CD'), ('.', '_.')], \
+             words_and_tags_list)
+
 
 if __name__ == '__main__':
     unittest.main()
