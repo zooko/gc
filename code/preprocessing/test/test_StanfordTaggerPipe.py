@@ -42,34 +42,34 @@ class StanfordTaggerPipeTest(unittest.TestCase):
     def test_tags_list(self):
 
         tags_list = tagger_pipe.tags_list(self.s0)
-        self.assertEqual(tags_list, ['_UH', '_,', '_NNP', '_.'], tags_list)
+        self.assertEqual(tags_list, ['UH', ',', 'NNP', '.'], tags_list)
         tags_list = tagger_pipe.tags_list(self.s1)
-        self.assertEqual(tags_list, ['_UH', '_RB', '_,', '_NNP', '_.'], tags_list)
+        self.assertEqual(tags_list, ['UH', 'RB', ',', 'NNP', '.'], tags_list)
         tags_list = tagger_pipe.tags_list(self.s2)
-        self.assertListEqual(tags_list, ['_:', '_-LRB-', '_JJ', '_:', '_NN', '_-RRB-', '_-LRB-', '_NN', '_:', '_NN', '_:', '_NN', '_-RRB-'], tags_list)
+        self.assertListEqual(tags_list, [':', '-LRB-', 'JJ', ':', 'NN', '-RRB-', '-LRB-', 'NN', ':', 'NN', ':', 'NN', '-RRB-'], tags_list)
 
     def test_words_and_tags_list(self):
 
         words_and_tags_list = tagger_pipe.words_and_tags_list(self.s0)
         self.assertEqual(words_and_tags_list, \
-          [('Hello', '_UH'), (',', '_,'), ('World', '_NNP'), ('.', '_.')], \
+          [('Hello', 'UH'), (',', ','), ('World', 'NNP'), ('.', '.')], \
              words_and_tags_list)
         words_and_tags_list = tagger_pipe.words_and_tags_list(self.s1)
         self.assertEqual(words_and_tags_list, \
-          [('Hello', '_UH'), ('again', '_RB'), (',', '_,'), ('World', '_NNP'), ('.', '_.')],  \
+          [('Hello', 'UH'), ('again', 'RB'), (',', ','), ('World', 'NNP'), ('.', '.')],  \
              words_and_tags_list)
         words_and_tags_list = tagger_pipe.words_and_tags_list(self.s2)
         self.assertListEqual(words_and_tags_list, \
-             [('-', '_:'), ('-LRB-', '_-LRB-'), ('http', '_JJ'), (':', '_:'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', '_NN'), ('-RRB-', '_-RRB-'), ('-LRB-', '_-LRB-'), ('HYPERLINK', '_NN'), (':', '_:'), ('http', '_NN'), (':', '_:'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', '_NN'), ('-RRB-', '_-RRB-')], \
+             [('-', ':'), ('-LRB-', '-LRB-'), ('http', 'JJ'), (':', ':'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'NN'), ('-RRB-', '-RRB-'), ('-LRB-', '-LRB-'), ('HYPERLINK', 'NN'), (':', ':'), ('http', 'NN'), (':', ':'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'NN'), ('-RRB-', '-RRB-')], \
              words_and_tags_list)
 
     def test_multi_sentence_line(self):
         multi_sentence = 'I am .  More than one .\n'
         tags_list = tagger_pipe.tags_list(multi_sentence)
-        self.assertEqual(tags_list, ['_PRP', '_VBP', '_.', '_JJR', '_IN', '_CD', '_.'], tags_list)
+        self.assertEqual(tags_list, ['PRP', 'VBP', '.', 'JJR', 'IN', 'CD', '.'], tags_list)
         words_and_tags_list = tagger_pipe.words_and_tags_list(multi_sentence)
         self.assertListEqual(words_and_tags_list, \
-             [('I', '_PRP'), ('am', '_VBP'), ('.', '_.'), ('More', '_JJR'), ('than', '_IN'), ('one', '_CD'), ('.', '_.')], \
+             [('I', 'PRP'), ('am', 'VBP'), ('.', '.'), ('More', 'JJR'), ('than', 'IN'), ('one', 'CD'), ('.', '.')], \
              words_and_tags_list)
 
 

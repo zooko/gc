@@ -101,13 +101,20 @@ def create_trigram_models(target, source, env):
     return None
 
 def create_pos_trigram_models(target, source, env):
+    '''
+    For every pos_vocabulary_size n, we make a model that uses the
+    most frequent n words and replaces all other words encountered in
+    training with the pos assigned to them in their sentence contexts.
+    '''
 
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
 
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     vocabulary_lists = []
-    srilm_make_lms = []
-    byte_writers = []
+    unicode_writers = []
+
+    # We want to get the pos tags only once, even if we want to use
+    # them for multiple models.
     for i in range(len(pos_vocabulary_sizes)):
         size = pos_vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
@@ -116,24 +123,24 @@ def create_pos_trigram_models(target, source, env):
         vocabulary_file_obj.close()
         vocabulary_lists.append(vocabulary_list)
 
-        trigram_model_name = data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa'
-        assert target[i].path == trigram_model_name, target[i].path
-        srilm_make_lms.append(subprocess.Popen(['ngram-count', '-tolower', '-kndiscount3', '-debug', '2', '-text', '-', '-lm', trigram_model_name], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
-        byte_writers.append(codecs.getwriter('utf-8')(srilm_make_lms[i].stdin))
+        unicode_writers.append(open_with_unicode(data_directory + 'pos_filled_training_gold_' + str(size) + 'K', None, 'w'))
 
     line_number = 1
-    print repr(create_pos_trigram_models), "Progress dots per 100 sentences."
+    print repr(create_pos_trigram_models), "POS tag filtering.  Progress dots per 100 sentences."
     for line in train_gold_file_obj:
-        filled_tokens = POSFiller.fill_sentence([l.__contains__ for l in vocabulary_lists], tagger_pipe.tags_list, line.strip())
+        filled_tokens = POSFiller.fill_sentence([l.__contains__ for l in vocabulary_lists], tagger_pipe.tags_list, line.lower().strip())
         if not line_number % 100:
             print '.',
-        for i in range(len(byte_writers)):
-            byte_writers[i].write(" ".join(filled_tokens[i])+'\n')
+        for i in range(len(unicode_writers)):
+            unicode_writers[i].write(" ".join(filled_tokens[i])+'\n')
         line_number += 1
-    for srilm_make_lm in srilm_make_lms:
-        srilm_make_lm.stdin.close()
-        srilm_make_lm.wait()
 
+    for i in range(len(pos_vocabulary_sizes)):
+        size = pos_vocabulary_sizes[i]
+        trigram_model_name = data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa'
+        assert target[i].path == trigram_model_name, target[i].path
+        srilm_make_lm = subprocess.Popen(['ngram-count', '-kndiscount3', '-text', data_directory + 'pos_filled_training_gold_' + str(size) + 'K', '-lm', trigram_model_name])
+        
     return None
 
 
