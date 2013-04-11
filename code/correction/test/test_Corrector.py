@@ -4,27 +4,27 @@
 from code.correction import Corrector
 import unittest
 
+def probability_of_error_function(tokens):
+    return 0.01
+def variation_generator(tokens):
+    token = tokens[-1]
+    if len(token) > 2:
+        return []
+    else:
+        return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ]
+def path_probability_function(tokens):
+    num_a_s = tokens[-1].count('a')
+    if len(tokens) > 3 and tokens[1] == 'isd':
+        return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
+    return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
 
-class BeamTest(unittest.TestCase):
+class CorrectorTest(unittest.TestCase):
 
     def test_beam_search(self):
 
-        def probability_of_error_function(tokens):
-            return 0.01
-        def variation_generator(tokens):
-            token = tokens[-1]
-            if len(token) > 2:
-                return []
-            else:
-                return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ]
-        def path_probability_function(previous_prob, tokens):
-            num_a_s = tokens[-1].count('a')
-            if len(tokens) > 3 and tokens[1] == 'isd':
-                return previous_prob + 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
-            return previous_prob + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
+        sentence = ['This', 'is', 'a', 'bad', 'sentence', '.']
 
         width = 5
-        sentence = ['This', 'is', 'a', 'bad', 'sentence', '.']
         best_sentence = Corrector.beam_search(sentence, width, probability_of_error_function, path_probability_function, variation_generator)
         self.assertListEqual(best_sentence, ['This', 'isa', 'aa', 'bad', 'sentence', '.a'])
 
