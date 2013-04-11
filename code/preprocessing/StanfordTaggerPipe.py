@@ -24,8 +24,8 @@ class StanfordTaggerPipe:
 
     def tags_list(self, token_string):
         self.stdin_byte_writer.write(self.tokenise_parentheses(token_string) + '\n')
-        result = self.tagger_pipe.stdout.readline()
-        newline = self.tagger_pipe.stdout.readline()
+        result = self.stdout.readline()
+        newline = self.stdout.readline()
         assert(newline == '\n'), repr(newline)
 
         '''
@@ -40,28 +40,28 @@ class StanfordTaggerPipe:
         tokens = token_string.split()
         result_tokens = result.split()
         while len(result_tokens) < len(tokens):
-            result = self.tagger_pipe.stdout.readline()
-            newline = self.tagger_pipe.stdout.readline()
+            result = self.stdout.readline()
+            newline = self.stdout.readline()
             assert(newline == '\n'), repr(newline)
             result_tokens += result.split()
-        return [y[-1] for y in [x.rpartition('_') for x in result_tokens]]
+        return [y[-1].decode('utf-8') for y in [x.rpartition('_') for x in result_tokens]]
 
     def words_and_tags_list(self, token_string):
         self.stdin_byte_writer.write(self.tokenise_parentheses(token_string) + '\n')
-        result = self.tagger_pipe.stdout.readline()
-        newline = self.tagger_pipe.stdout.readline()
+        result = self.stdout.readline()
+        newline = self.stdout.readline()
         assert(newline == '\n'), repr(newline)
         tokens = token_string.split()
         result_tokens = result.split()
 
         # See comment in tags_list
         while len(result_tokens) < len(tokens):
-            result = self.tagger_pipe.stdout.readline()
-            newline = self.tagger_pipe.stdout.readline()
+            result = self.stdout.readline()
+            newline = self.stdout.readline()
             assert(newline == '\n'), repr(newline)
             result_tokens += result.split()
 
-        return [(y[0], y[-1]) for y in [x.rpartition('_') for x in result_tokens]]
+        return [(y[0].decode('utf-8'), y[-1].decode('utf-8')) for y in [x.rpartition('_') for x in result_tokens]]
 
     def shutdown(self):
         if hasattr(self, "tagger_pipe"):

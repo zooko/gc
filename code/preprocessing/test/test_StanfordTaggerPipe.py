@@ -47,6 +47,8 @@ class StanfordTaggerPipeTest(unittest.TestCase):
         self.assertEqual(tags_list, ['UH', 'RB', ',', 'NNP', '.'], tags_list)
         tags_list = tagger_pipe.tags_list(self.s2)
         self.assertListEqual(tags_list, [':', '-LRB-', 'JJ', ':', 'NN', '-RRB-', '-LRB-', 'NN', ':', 'NN', ':', 'NN', '-RRB-'], tags_list)
+        for i in tags_list:
+            self.assertIsInstance(i, unicode, i)
 
     def test_words_and_tags_list(self):
 
@@ -71,6 +73,9 @@ class StanfordTaggerPipeTest(unittest.TestCase):
         self.assertListEqual(words_and_tags_list, \
              [('I', 'PRP'), ('am', 'VBP'), ('.', '.'), ('More', 'JJR'), ('than', 'IN'), ('one', 'CD'), ('.', '.')], \
              words_and_tags_list)
+        for i in words_and_tags_list:
+            self.assertIsInstance(i[0], unicode, i)
+            self.assertIsInstance(i[1], unicode, i)
 
 
 if __name__ == '__main__':
