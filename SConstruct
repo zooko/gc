@@ -6,7 +6,7 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
+import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, json
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe, POSFiller
 from code.language_modelling import VocabularyCutter
@@ -100,6 +100,36 @@ def create_trigram_models(target, source, env):
 
     return None
 
+def get_pos_data(target, source, env):
+
+    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
+
+    train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
+    train_gold_with_pos_file_obj = open_with_unicode(target[1].path, None, 'w')
+    from collections import defaultdict
+    pos_dictionary = defaultdict(list)
+    
+    print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
+    line_number = 1
+    for line in train_gold_file_obj:
+        if not line_number % 100:
+            print '.',
+        words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
+        for w, t in words_and_tags:
+            train_gold_with_pos_file_obj.write(w.lower() + u" " + t + u" ")
+            pos_dictionary[t].append(w.lower())
+        train_gold_with_pos_file_obj.write('\n')
+        line_number += 1
+
+    for key in pos_dictionary.keys():
+        pos_dictionary[key].sort()
+
+    pos_dictionary_file_obj = open_with_unicode(target[0].path, None, 'w')
+    pos_dictionary_file_obj.write(json.dumps(pos_dictionary))
+    
+    return None
+    
+
 def create_pos_trigram_models(target, source, env):
     '''
     For every pos_vocabulary_size n, we make a model that uses the
@@ -179,8 +209,9 @@ training_gold_builder = Builder(action = training_m2_5_to_gold)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_trigram_models_builder = Builder(action = create_pos_trigram_models)
+pos_data_builder = Builder(action = get_pos_data)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder, 'pos_data' : pos_data_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -197,6 +228,10 @@ env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size i
 env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set_gold'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+
+env.pos_data([data_directory + "pos_dictionary", data_directory + "training_set_gold_with_pos_tags"], [data_directory + "training_set_gold"])
+
+env.Alias("pos_data", [data_directory + "pos_dictionary", data_directory + "training_set_gold_with_pos_tags"])
 
 env.pos_trigram_models([data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes], [data_directory + 'training_set_gold'] +  [data_directory + str(size) + 'K.vocab' for size in pos_vocabulary_sizes])
 
