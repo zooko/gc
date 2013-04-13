@@ -4,7 +4,7 @@
 from code.correction import VariationProposer
 import unittest
 
-tag_dictionary = {"DT": ["a", "the", "any", "another", ""], "IN": ["with", "from", "of", ""], "CC": ["and", "but", "or"], "VB": ["like", "love"], "VBD": ['loved'], "VBG": ['loving']}
+tag_dictionary = {"DT": ["a", "the", "any", "another"], "IN": ["with", "from", "of"], "CC": ["and", "but", "or"], "VB": ["like", "love"], "VBD": ['loved'], "VBG": ['loving']}
 
 def pos_tagger(tokens):
     return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(tokens)]
@@ -34,15 +34,10 @@ class VariationProposerTest(unittest.TestCase):
         self.assertListEqual(proposed, ['like', 'love', 'loving'])
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
-        self.assertListEqual(proposed, ["from", "of", ""], proposed)
+        self.assertListEqual(proposed, ["from", "of"], proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertListEqual(proposed, ["the", "any", "another", ""], proposed)
-
-
-
-
-
+        self.assertListEqual(proposed, ["the", "any", "another"], proposed)
 
 if __name__ == '__main__':
     unittest.main()
