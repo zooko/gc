@@ -15,8 +15,8 @@ tag_dictionary["VBG"] = ['loving']
 tag_dictionary['TO'] = ['to']
 tag_dictionary['MD'] = ['might', 'could']
 
-def pos_tagger(tokens):
-    return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(tokens)]
+def pos_tagger(sentence):
+    return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
 l_vars = ['laboured', 'labyrinths', 'laden', 'lamp', 'like', 'love', 'lover', 'loves', 'loving']
 
@@ -33,8 +33,9 @@ class VariationProposerTest(unittest.TestCase):
 
     def test_closed_class_alternatives(self):
 
-        tokens = "We loved with a love that was more than love .".lower().split()
-        tags = pos_tagger(tokens)
+        sentence = "We loved with a love that was more than love .".lower()
+        tokens = sentence.split()
+        tags = pos_tagger(sentence)
 
         proposed = proposer.get_alternatives(tokens[0], tags[0])
         self.assertListEqual(proposed, [])
@@ -50,10 +51,11 @@ class VariationProposerTest(unittest.TestCase):
 
     def test_generate_path_variations(self):
 
-        tokens = "We loved with".lower().split()
+        sentence = "We loved with".lower()
+        tokens = sentence.split()
         beginning = tokens[:-1]
 
-        path_variations = proposer.generate_path_variations(tokens)
+        path_variations = proposer.generate_path_variations(sentence)
         self.assertEquals(len(path_variations), 83, str(path_variations) + ": " + str(len(path_variations)))
         self.assertIn(beginning + ['a', 'from'], path_variations, path_variations)
         self.assertIn(beginning + ['a', 'of'], path_variations, path_variations)

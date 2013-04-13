@@ -34,10 +34,11 @@ class VariationProposer():
             return self.open_class_alternatives(token, tag[:2])
         return []
 
-    def generate_path_variations(self, tokens):
+    def generate_path_variations(self, sentence):
 
         path_variations = []
-        tags = self.pos_tagger(tokens)
+        tags = self.pos_tagger(sentence)
+        tokens = sentence.split()
         token_variations = self.get_alternatives(tokens[-1], tags[-1])
         for var in token_variations:
             path_variations.append(tokens[:-1] + [var])
