@@ -2,9 +2,18 @@
 # test_VariationProposer.py
 
 from code.correction import VariationProposer
+from collections import defaultdict
 import unittest
 
-tag_dictionary = {"DT": ["a", "the", "any", "another"], "IN": ["with", "from", "of"], "CC": ["and", "but", "or"], "VB": ["like", "love"], "VBD": ['loved'], "VBG": ['loving']}
+tag_dictionary = defaultdict(list)
+tag_dictionary['DT'] = ["a", "the", "any", "another"]
+tag_dictionary["IN"] = ["with", "from", "of"]
+tag_dictionary["CC"] = ["and", "but", "or"]
+tag_dictionary["VB"] = ["like", "love"]
+tag_dictionary["VBD"] = ['loved']
+tag_dictionary["VBG"] = ['loving']
+tag_dictionary['TO'] = ['to']
+tag_dictionary['MD'] = ['might', 'could']
 
 def pos_tagger(tokens):
     return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(tokens)]
@@ -38,6 +47,25 @@ class VariationProposerTest(unittest.TestCase):
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
         self.assertListEqual(proposed, ["the", "any", "another"], proposed)
+
+    def test_generate_path_variations(self):
+
+        tokens = "We loved with".lower().split()
+        beginning = tokens[:-1]
+
+        path_variations = proposer.generate_path_variations(tokens)
+        self.assertEquals(len(path_variations), 83, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertIn(beginning + ['a', 'from'], path_variations, path_variations)
+        self.assertIn(beginning + ['a', 'of'], path_variations, path_variations)
+        self.assertIn(beginning + ['the', 'from'], path_variations, path_variations)
+        self.assertIn(beginning + ['the', 'of'], path_variations, path_variations)
+        self.assertIn(beginning + ['another', 'from'], path_variations, path_variations)
+        self.assertIn(beginning + ['another', 'of'], path_variations, path_variations)
+
+        self.assertIn(beginning + ['from'], path_variations, path_variations)
+        self.assertIn(beginning + ['of'], path_variations, path_variations)
+
+        self.assertNotIn(beginning + ['with'], path_variations, path_variations)
 
 if __name__ == '__main__':
     unittest.main()
