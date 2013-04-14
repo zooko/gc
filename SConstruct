@@ -107,7 +107,7 @@ def get_pos_data(target, source, env):
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     train_gold_with_pos_file_obj = open_with_unicode(target[1].path, None, 'w')
     from collections import defaultdict
-    pos_dictionary = defaultdict(list)
+    pos_dictionary_set = defaultdict(set)
     
     print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
     line_number = 1
@@ -117,10 +117,13 @@ def get_pos_data(target, source, env):
         words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
         for w, t in words_and_tags:
             train_gold_with_pos_file_obj.write(w.lower() + u" " + t + u" ")
-            pos_dictionary[t].append(w.lower())
+            pos_dictionary_set[t].add(w.lower())
         train_gold_with_pos_file_obj.write('\n')
         line_number += 1
 
+    pos_dictionary = defaultdict(list)
+    for k,v in pos_dictionary_set.iteritems():
+        pos_dictionary[k] = list(v)
     for key in pos_dictionary.keys():
         pos_dictionary[key].sort()
 
