@@ -16,15 +16,28 @@ class VariationProposer():
 
     def closed_class_alternatives(self, token, tag):
 
-        ind = self.tag_dictionary[tag].index(token)
-        return self.tag_dictionary[tag][:ind] + self.tag_dictionary[tag][ind+1:]
+        try:
+            ind = self.tag_dictionary[tag].index(token)
+            return self.tag_dictionary[tag][:ind] + self.tag_dictionary[tag][ind+1:]
+        except ValueError:
+            return self.tag_dictionary[tag]
 
     def open_class_alternatives(self, token, tag_type):
 
-        prefix = token[:-4]
+        if len(token) > 4:
+            prefix = token[:-4]
+        else:
+            prefix = token[0]
         length = len(token)
+        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if len(t) <= length + 4]
+        relevant_tag_prefix_tokens = []
         keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type)]
-        return [t for t in self.vocab_with_prefix(prefix) if len(t) <= length + 4 and reduce( lambda x,y: x or y, [t in self.tag_dictionary[k] for k in keys] ) ]
+        for pt in prefix_tokens:
+            for k in keys:
+                if pt in self.tag_dictionary[k]:
+                    relevant_tag_prefix_tokens.append(pt)
+                    break
+        return relevant_tag_prefix_tokens
 
     def get_alternatives(self, token, tag):
 
