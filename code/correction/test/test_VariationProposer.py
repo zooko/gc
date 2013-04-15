@@ -15,6 +15,8 @@ tag_dictionary["VBG"] = ['loving']
 tag_dictionary['TO'] = ['to']
 tag_dictionary['MD'] = ['might', 'could']
 
+insertables = ['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need']
+
 def pos_tagger(sentence):
     return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
@@ -27,7 +29,7 @@ def vocab_with_prefix(prefix):
         return ['am', 'are', 'bad', 'cue', 'did', 'is']
     return []
 
-proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, vocab_with_prefix)
+proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, vocab_with_prefix, insertables)
 
 class VariationProposerTest(unittest.TestCase):
 
@@ -56,17 +58,19 @@ class VariationProposerTest(unittest.TestCase):
         beginning = tokens[:-1]
 
         path_variations = proposer.generate_path_variations(sentence)
-        self.assertEquals(len(path_variations), 83, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertEquals(len(path_variations), 20, str(path_variations) + ": " + str(len(path_variations)))
         self.assertIn(beginning + ['a', 'from'], path_variations, path_variations)
         self.assertIn(beginning + ['a', 'of'], path_variations, path_variations)
         self.assertIn(beginning + ['the', 'from'], path_variations, path_variations)
         self.assertIn(beginning + ['the', 'of'], path_variations, path_variations)
-        self.assertIn(beginning + ['another', 'from'], path_variations, path_variations)
-        self.assertIn(beginning + ['another', 'of'], path_variations, path_variations)
+        self.assertIn(beginning + ['of', 'from'], path_variations, path_variations)
+        self.assertIn(beginning + ['of', 'of'], path_variations, path_variations)
 
         self.assertIn(beginning + ['from'], path_variations, path_variations)
         self.assertIn(beginning + ['of'], path_variations, path_variations)
 
+        self.assertNotIn(beginning + ['another', 'from'], path_variations, path_variations)
+        self.assertNotIn(beginning + ['another', 'of'], path_variations, path_variations)
         self.assertNotIn(beginning + ['with'], path_variations, path_variations)
 
 if __name__ == '__main__':

@@ -3,16 +3,17 @@
 
 class VariationProposer():
 
-    def __init__(self, pos_tagger, tag_dictionary, vocab_with_prefix):
+    def __init__(self, pos_tagger, tag_dictionary, vocab_with_prefix, insertables):
         self.pos_tagger = pos_tagger
         self.vocab_with_prefix = vocab_with_prefix
         self.tag_dictionary = tag_dictionary
         self.tag_dictionary['AUX'] = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
         closed_class_preceder_tags = ['IN', 'DT', 'TO', 'MD', 'AUX']
         self.closed_class_preceder_tokens = set([])
-        for tag in closed_class_preceder_tags:
-            for token in tag_dictionary[tag]:
-                self.closed_class_preceder_tokens.add(token)
+        for token in insertables:
+            for tag in closed_class_preceder_tags:
+                if token in tag_dictionary[tag]:
+                    self.closed_class_preceder_tokens.add(token)
 
     def closed_class_alternatives(self, token, tag):
 
@@ -41,7 +42,7 @@ class VariationProposer():
 
     def get_alternatives(self, token, tag):
 
-        if tag in ["IN", "DT"]:
+        if tag in ["IN", "DT", "AUX"]:
             return self.closed_class_alternatives(token, tag)
         if tag[:2] in ["NN", "VB"]:
             return self.open_class_alternatives(token, tag[:2])
