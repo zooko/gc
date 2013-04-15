@@ -23,14 +23,27 @@ class VariationProposer():
         except ValueError:
             return self.tag_dictionary[tag]
 
+    def levenshtein_distance(self, seq1, seq2):
+        one_ago = None
+        this_row = range(1, len(seq2) + 1) + [0]
+        for x in xrange(len(seq1)):
+            two_ago, one_ago, this_row = one_ago, this_row, [0] * len(seq2) + [x + 1]
+            for y in xrange(len(seq2)):
+                del_cost = one_ago[y] + 1
+                add_cost = this_row[y - 1] + 1
+                sub_cost = one_ago[y - 1] + (seq1[x] != seq2[y])
+                this_row[y] = min(del_cost, add_cost, sub_cost)
+        return this_row[len(seq2) - 1]
+
     def open_class_alternatives(self, token, tag_type):
 
         if len(token) > 4:
             prefix = token[:-4]
+            suffix = token[-4:]
         else:
             prefix = token[0]
-        length = len(token)
-        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if len(t) <= length + 4]
+            suffix = token[1:]
+        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
         relevant_tag_prefix_tokens = []
         keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type)]
         for pt in prefix_tokens:
