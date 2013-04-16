@@ -11,14 +11,18 @@ def variation_generator(sentence):
     tokens = sentence.split()
     token = tokens[-1]
     if len(token) > 2:
-        return []
+        return [ tokens ]
     else:
-        return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ]
+        if token == '.':
+            return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ] + [ tokens[:-1] ]
+        else:
+            return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ]
 def path_probability_function(tokens):
     num_a_s = tokens[-1].count('a')
+    num_periods = tokens.count(['.'])
     if len(tokens) > 3 and tokens[1] == 'isd':
-        return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
-    return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s
+        return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
+    return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
 
 class CorrectorTest(unittest.TestCase):
 
@@ -28,11 +32,11 @@ class CorrectorTest(unittest.TestCase):
 
         width = 5
         best_tokens = Corrector.beam_search(tokens, width, probability_of_error_function, path_probability_function, variation_generator)
-        self.assertListEqual(best_tokens, ['This', 'isa', 'aa', 'bad', 'sentence', '.a'])
+        self.assertListEqual(best_tokens, ['This', 'isa', 'aa', 'bad', 'sentence'])
 
         width = 50
         best_tokens = Corrector.beam_search(tokens, width, probability_of_error_function, path_probability_function, variation_generator)
-        self.assertListEqual(best_tokens, ['This', 'isd', 'aa', 'bad', 'sentence', '.a'])
+        self.assertListEqual(best_tokens, ['This', 'isd', 'aa', 'bad', 'sentence'])
 
         tokens = ['This', 'isn\'t', 'bad', '...']
         best_tokens = Corrector.beam_search(tokens, width, probability_of_error_function, path_probability_function, variation_generator)

@@ -24,9 +24,13 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
             token_string = ' '.join(path_with_next_original_token)
             for path_variation in variation_generator(token_string):
                 print "I'm a variation:", path_variation
-                prob = path_prob_func(path_variation)
-                print "And here's my prob:", prob
-                new_beam.append( (path_log_prob + prob + prob_of_err_func(path_variation), path_variation) )
+                if path_variation == path_tokens: # We had a deletion
+                    new_beam.append(path)
+                    print "AND HERE'S MY PROB:", path_log_prob
+                else:
+                    prob = path_prob_func(path_variation)
+                    print "And here's my prob:", prob
+                    new_beam.append( (path_log_prob + prob + prob_of_err_func(path_variation), path_variation) )
 
         new_beam.sort()
         beam = new_beam[-width:]
