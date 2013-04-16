@@ -68,9 +68,12 @@ class VariationProposer():
         tokens = sentence.split()
         token_variations = self.get_alternatives(tokens[-1], tags[-1])
         for var in token_variations:
-            path_variations.append(tokens[:-1] + [var])
-            for insertion_token in self.closed_class_preceder_tokens:
-                path_variations.append(tokens[:-1] + [insertion_token] + [var])
+            if var == '':
+                path_variations.append(tokens[:-1])
+            else:
+                path_variations.append(tokens[:-1] + [var])
+                for insertion_token in self.closed_class_preceder_tokens:
+                    path_variations.append(tokens[:-1] + [insertion_token] + [var])
         for insertion_token in self.closed_class_preceder_tokens:
             path_variations.append(tokens[:-1] + [insertion_token] + [tokens[-1]])
         return path_variations

@@ -7,7 +7,7 @@ import unittest
 
 tag_dictionary = defaultdict(list)
 tag_dictionary['DT'] = ["a", "the", "any", "another"]
-tag_dictionary["IN"] = ["with", "from", "of"]
+tag_dictionary["IN"] = ["with", "from", "of", '']
 tag_dictionary["CC"] = ["and", "but", "or"]
 tag_dictionary["VB"] = ["like", "love"]
 tag_dictionary["VBD"] = ['loved']
@@ -46,7 +46,7 @@ class VariationProposerTest(unittest.TestCase):
         self.assertListEqual(proposed, ['like', 'love', 'loving'])
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
-        self.assertListEqual(proposed, ["from", "of"], proposed)
+        self.assertListEqual(proposed, ["from", "of", ""], proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
         self.assertListEqual(proposed, ["the", "any", "another"], proposed)
@@ -58,7 +58,8 @@ class VariationProposerTest(unittest.TestCase):
         beginning = tokens[:-1]
 
         path_variations = proposer.generate_path_variations(sentence)
-        self.assertEquals(len(path_variations), 20, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertEquals(len(path_variations), 21, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertIn(beginning, path_variations, path_variations)
         self.assertIn(beginning + ['a', 'from'], path_variations, path_variations)
         self.assertIn(beginning + ['a', 'of'], path_variations, path_variations)
         self.assertIn(beginning + ['the', 'from'], path_variations, path_variations)
