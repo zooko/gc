@@ -14,27 +14,27 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
     for i in range(len(tokens)):
         new_beam = []
         for path in beam:
-            print "I'm a path in the beam:", path
+#            print "I'm a path in the beam:", path
             path_log_prob, path_tokens = path
             path_with_next_original_token = path_tokens + [tokens[i]]
-            print "Here I am with next token:", path_with_next_original_token
+#            print "Here I am with next token:", path_with_next_original_token
             prob = path_prob_func(path_with_next_original_token)
-            print "Here's my prob:", prob
+#            print "Here's my prob:", prob
             new_beam.append( (path_log_prob + prob, path_with_next_original_token) )
             token_string = ' '.join(path_with_next_original_token)
             for path_variation in variation_generator(token_string):
-                print "I'm a variation:", path_variation
+#                print "I'm a variation:", path_variation
                 if path_variation == path_tokens: # We had a deletion
                     new_beam.append(path)
-                    print "AND HERE'S MY PROB:", path_log_prob
+#                    print "AND HERE'S MY PROB:", path_log_prob
                 else:
                     prob = path_prob_func(path_variation)
-                    print "And here's my prob:", prob
+#                    print "And here's my prob:", prob
                     new_beam.append( (path_log_prob + prob + prob_of_err_func(path_variation), path_variation) )
 
         new_beam.sort()
         beam = new_beam[-width:]
-        print "I am a beam:", beam, '\n'
+#        print "I am a beam:", beam, '\n'
 
     return beam[-1][1]
 
