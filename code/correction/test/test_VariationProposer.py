@@ -7,7 +7,7 @@ import unittest
 
 tag_dictionary = defaultdict(list)
 tag_dictionary['DT'] = ["a", "the", "any", "another"]
-tag_dictionary["IN"] = ["with", "from", "of", '']
+tag_dictionary["IN"] = ["with", "from", "of"]
 tag_dictionary["CC"] = ["and", "but", "or"]
 tag_dictionary["VB"] = ["like", "love"]
 tag_dictionary["VBD"] = ['loved']
@@ -16,6 +16,7 @@ tag_dictionary['TO'] = ['to']
 tag_dictionary['MD'] = ['might', 'could']
 
 insertables = ['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need']
+deletables = ['with', 'a', 'the', 'water']
 
 def pos_tagger(sentence):
     return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
@@ -29,7 +30,7 @@ def vocab_with_prefix(prefix):
         return ['am', 'are', 'bad', 'cue', 'did', 'is']
     return []
 
-proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, vocab_with_prefix, insertables)
+proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, vocab_with_prefix, insertables, deletables)
 
 class VariationProposerTest(unittest.TestCase):
 
@@ -49,7 +50,7 @@ class VariationProposerTest(unittest.TestCase):
         self.assertListEqual(proposed, ["from", "of", ""], proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertListEqual(proposed, ["the", "any", "another"], proposed)
+        self.assertListEqual(proposed, ["the", "any", "another", ''], proposed)
 
     def test_levenshtein_distance(self):
         pass

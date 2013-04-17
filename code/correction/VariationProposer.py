@@ -3,25 +3,35 @@
 
 class VariationProposer():
 
-    def __init__(self, pos_tagger, tag_dictionary, vocab_with_prefix, insertables):
+    def __init__(self, pos_tagger, tag_dictionary, vocab_with_prefix, insertables, deletables):
         self.pos_tagger = pos_tagger
         self.vocab_with_prefix = vocab_with_prefix
         self.tag_dictionary = tag_dictionary
         self.tag_dictionary['AUX'] = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
-        closed_class_preceder_tags = ['IN', 'DT', 'TO', 'MD', 'AUX']
+        closed_class_tags = ['IN', 'DT', 'TO', 'MD', 'AUX']
         self.closed_class_preceder_tokens = set([])
         for token in insertables:
-            for tag in closed_class_preceder_tags:
+            for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
                     self.closed_class_preceder_tokens.add(token)
+        self.closed_class_deletables = set([])
+        for token in deletables:
+            for tag in closed_class_tags:
+                if token in tag_dictionary[tag]:
+                    self.closed_class_deletables.add(token)
 
     def closed_class_alternatives(self, token, tag):
 
         try:
             ind = self.tag_dictionary[tag].index(token)
-            return self.tag_dictionary[tag][:ind] + self.tag_dictionary[tag][ind+1:]
+            alternatives =  self.tag_dictionary[tag][:ind] + self.tag_dictionary[tag][ind+1:]
         except ValueError:
-            return self.tag_dictionary[tag]
+            alternatives =  self.tag_dictionary[tag]
+
+        if token in self.closed_class_deletables:
+            alternatives.append('')
+
+        return alternatives
 
     def levenshtein_distance(self, seq1, seq2):
         one_ago = None
