@@ -43,6 +43,10 @@ class CorrectorTest(unittest.TestCase):
         self.assertListEqual(best_tokens, ['This', 'isn\'t', 'bad', '...'])
 
     def test_get_correction(self):
+        '''
+        This is a regression test and a test of pieces working
+        together, not of the correctness of results.
+        '''
 
         from BackOffTrigramModel import BackOffTrigramModelPipe
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
@@ -52,12 +56,13 @@ class CorrectorTest(unittest.TestCase):
         tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, small_insertables)
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, small_insertables, small_deletables)
         corrector = Corrector.Corrector(tmpipe_obj, 10, var_gen.generate_path_variations, -3.3)
 
         tokens = "This will , if not already , caused problems as there are very limited spaces for us .".lower().split()
         result = corrector.get_correction(tokens)
-        self.assertEqual(result, '', result)
+        self.assertListEqual(result, ['this', 'will', ',', 'if', 'not', 'already', ',', u'may', 'cause', 'problems', 'there', 'are', 'very', 'limited', 'spaces', 'us', '.'], result)
 
 if __name__ == '__main__':
     unittest.main()
