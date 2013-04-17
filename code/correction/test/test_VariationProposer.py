@@ -51,6 +51,9 @@ class VariationProposerTest(unittest.TestCase):
         proposed = proposer.get_alternatives(tokens[3], tags[3])
         self.assertListEqual(proposed, ["the", "any", "another"], proposed)
 
+    def test_levenshtein_distance(self):
+        pass
+
     def test_generate_path_variations(self):
 
         sentence = "We loved with".lower()
