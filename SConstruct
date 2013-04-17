@@ -188,7 +188,7 @@ def correct_and_score(target, source, env):
 
     correctors = []
     corrections_file_objs = []
-    for i in range(len(pos_vocabulary_sizes)):
+    for i in range(len(vocabulary_sizes)):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+3].path)
         var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, insertables)
         correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability))
@@ -249,9 +249,9 @@ vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_trigram_models_builder = Builder(action = create_pos_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
-scored_corrections_builder = Builder(action = correct_and_score)
+corrections_builder = Builder(action = correct_and_score)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder, 'pos_data' : pos_data_builder, 'scored_corrections': scored_corrections_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder, 'pos_data' : pos_data_builder, 'corrections': corrections_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -277,6 +277,6 @@ env.pos_trigram_models([data_directory + 'pos_trigram_model_' + str(size) + 'K.a
 
 env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes])
 
-env.scored_corrections([data_directory + 'scored_corrections_trigram_model_' + str(size) + 'K' for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'insertables', data_directory + 'pos_dictionary'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'insertables', data_directory + 'pos_dictionary'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
-env.Alias('scored_corrections', [data_directory + 'scored_corrections_trigram_model_' + str(size) + 'K' for size in vocabulary_sizes])
+env.Alias('corrections', [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes])
