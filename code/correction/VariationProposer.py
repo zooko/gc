@@ -65,8 +65,10 @@ class VariationProposer():
 
     def get_alternatives(self, token, tag):
 
-        if tag in ["IN", "DT", "AUX"]:
+        if tag in ["IN", "DT"]:
             return self.closed_class_alternatives(token, tag)
+        if token in ["AUX"]:
+            return self.closed_class_alternatives(token, 'AUX')
         if tag[:2] in ["NN", "VB"]:
             return self.open_class_alternatives(token, tag[:2])
         return []
