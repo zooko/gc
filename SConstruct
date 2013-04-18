@@ -180,19 +180,20 @@ def create_pos_trigram_models(target, source, env):
 
     return None
 
-def correct_and_score(target, source, env):
+def correct(target, source, env):
 
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
-    insertables =  open_with_unicode(source[1].path, None, 'r')
-    pos_dictionary = json.load(open_with_unicode(source[2].path, None, 'r'))
+    pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
+    insertables =  open_with_unicode(source[2].path, None, 'r')
+    deletables =  open_with_unicode(source[3].path, None, 'r')
 
     correctors = []
     corrections_file_objs = []
     for i in range(len(vocabulary_sizes)):
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+3].path)
-        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, insertables)
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+4].path)
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, insertables, deletables)
         correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability))
-        corrections_file_objs.append(open_with_unicode(source[i+3].path + '_corrections', None, 'w'))
+        corrections_file_objs.append(open_with_unicode(source[i+4].path + '_corrections', None, 'w'))
 
     tokens = []
     for line in open_with_unicode(source[0].path, None, 'r'):
@@ -204,9 +205,17 @@ def correct_and_score(target, source, env):
         else:
             tokens.append(line.split()[4])
 
-#    for i in len(corrections_file_objs):
-#        (target[i].path, None, 'w'))
+    return None
 
+def score_corrections(target, source, env):
+
+    for i in range(len(vocabulary_sizes)):
+        print source[i].path
+        scorer = subprocess.Popen(['python', data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=-1)
+        scorer.wait()
+        score_file_obj = open_with_unicode(target[i].path, None, 'w')
+        for line in scorer.stdout.readlines():
+            score_file_obj.write(line)
 
     return None
 
@@ -249,9 +258,10 @@ vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_trigram_models_builder = Builder(action = create_pos_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
-corrections_builder = Builder(action = correct_and_score)
+corrections_builder = Builder(action = correct)
+scores_builder = Builder(action = score_corrections)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder, 'pos_data' : pos_data_builder, 'corrections': corrections_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_trigram_models' : pos_trigram_models_builder, 'pos_data' : pos_data_builder, 'corrections': corrections_builder, 'scores': scores_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -277,6 +287,10 @@ env.pos_trigram_models([data_directory + 'pos_trigram_model_' + str(size) + 'K.a
 
 env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes])
 
-env.corrections([data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'insertables', data_directory + 'pos_dictionary'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
 env.Alias('corrections', [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes])
+
+env.scores([data_directory + 'scores_' + str(size) for size in vocabulary_sizes], [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes])
+
+env.Alias('scores', [data_directory + 'scores_' + str(size) for size in vocabulary_sizes])
