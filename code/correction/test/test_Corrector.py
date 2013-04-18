@@ -62,7 +62,7 @@ class CorrectorTest(unittest.TestCase):
 
         tokens = "This will , if not already , caused problems as there are very limited spaces for us .".lower().split()
         result = corrector.get_correction(tokens)
-        self.assertListEqual(result, ['this', 'will', ',', 'if', 'not', 'already', ',', u'may', 'cause', 'problems', 'there', 'are', 'very', 'limited', 'spaces', 'us', '.'], result)
+        self.assertListEqual(result, ['this', 'will', ',', 'if', 'not', 'already', ',', 'caused', 'problems', 'as', 'there', 'are', 'very', 'limited', 'spaces', 'for', 'us', '.'], result)
 
 if __name__ == '__main__':
     unittest.main()

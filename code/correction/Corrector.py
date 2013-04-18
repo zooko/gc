@@ -8,6 +8,7 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
     existing path on the beam.  Sort and prune. At the end, return the
     best path.
     A path is just a tuple of a log probability and a list of tokens.
+    The log probability is a per word probability.
     """
 
     beam = [(0, [])]
@@ -20,7 +21,8 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
 #            print "Here I am with next token:", path_with_next_original_token
             prob = path_prob_func(path_with_next_original_token)
 #            print "Here's my prob:", prob
-            new_beam.append( (path_log_prob + prob, path_with_next_original_token) )
+            per_word_prob = (path_log_prob * len(path_tokens) + prob) / len(path_with_next_original_token)
+            new_beam.append( (per_word_prob, path_with_next_original_token) )
             token_string = ' '.join(path_with_next_original_token)
             for path_variation in variation_generator(token_string):
 #                print "I'm a variation:", path_variation
@@ -29,8 +31,9 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
 #                    print "AND HERE'S MY PROB:", path_log_prob
                 else:
                     prob = path_prob_func(path_variation)
+                    per_word_prob = (path_log_prob * len(path_tokens) + prob) / len(path_with_next_original_token)
 #                    print "And here's my prob:", prob
-                    new_beam.append( (path_log_prob + prob + prob_of_err_func(path_variation), path_variation) )
+                    new_beam.append( (per_word_prob + prob_of_err_func(path_variation), path_variation) )
 
         new_beam.sort()
         beam = new_beam[-width:]
