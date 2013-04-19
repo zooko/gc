@@ -77,5 +77,5 @@ class Corrector():
 
 
     def get_correction(self, tokens):
-       
+
         return beam_search(tokens, self.width, self.get_error_prob, self.trigram_path_probability, self.variation_generator)
