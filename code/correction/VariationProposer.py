@@ -42,7 +42,9 @@ class VariationProposer():
                 this_row[y] = min(del_cost, add_cost, sub_cost)
         return this_row[len(seq2) - 1]
 
-    def open_class_alternatives(self, token, tag_type):
+    def open_class_alternatives(self, token, tag):
+        
+        tag_type = tag[:2]
 
         if len(token) > 4:
             prefix = token[:-4]
@@ -51,8 +53,23 @@ class VariationProposer():
             prefix = token[0]
             suffix = token[1:]
         prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
+
         relevant_tag_prefix_tokens = set([])
-        keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type)]
+        if tag_type == 'VB':
+            keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag]
+        else:
+            assert(tag_type == 'NN', tag_type)
+            if tag == 'NNS' and 'NN' in self.tag_dictionary.keys():
+                keys = ['NN']
+            elif tag == 'NN' and 'NNS' in self.tag_dictionary.keys():
+                keys = ['NNS']
+            elif tag == 'NNPS' and 'NNP' in self.tag_dictionary.keys():
+                keys = ['NNP']
+            elif tag == 'NNP' and 'NNPS' in self.tag_dictionary.keys():
+                keys = ['NNPS']
+            else:
+                assert(False, tag)
+
         for pt in prefix_tokens:
             for k in keys:
                 if pt in self.tag_dictionary[k]:
@@ -60,6 +77,8 @@ class VariationProposer():
                     break
         if token in relevant_tag_prefix_tokens:
             relevant_tag_prefix_tokens.remove(token)
+        if token == 'agree':
+            print "Tag, tag type, keys: ", tag, tag_type, keys
         return relevant_tag_prefix_tokens
 
     def get_alternatives(self, token, tag):
@@ -69,7 +88,7 @@ class VariationProposer():
         if token in ["AUX"]:
             return self.closed_class_alternatives(token, 'AUX')
         if tag[:2] in ["NN", "VB"]:
-            return self.open_class_alternatives(token, tag[:2])
+            return self.open_class_alternatives(token, tag)
         return set([])
 
     def generate_path_variations(self, sentence):
@@ -89,6 +108,8 @@ class VariationProposer():
 
         lowered_tokens = [t.lower() for t in tokens]
         token_variations = self.get_alternatives(lowered_tokens[-1], tags[-1])
+        print "Token: ", tokens[-1]
+        print "Token variations: ", token_variations
 
         for var in token_variations:
 
