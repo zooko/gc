@@ -5,7 +5,7 @@ from code.correction import Corrector, VariationProposer
 from code.preprocessing import StanfordTaggerPipe
 import unittest, json
 
-def probability_of_error_function(tokens):
+def probability_of_error_function():
     return 0.01
 def variation_generator(sentence):
     tokens = sentence.split()
