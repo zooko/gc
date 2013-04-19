@@ -19,14 +19,11 @@ class VariationProposer():
             for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
                     self.closed_class_deletables.add(token)
+        self.tmpipe_obj = tmpipe_obj
 
     def closed_class_alternatives(self, token, tag):
 
-        try:
-            ind = self.tag_dictionary[tag].index(token)
-            alternatives =  self.tag_dictionary[tag][:ind] + self.tag_dictionary[tag][ind+1:]
-        except ValueError:
-            alternatives =  self.tag_dictionary[tag]
+        alternatives = [alt for alt in self.tag_dictionary[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
 
         if token in self.closed_class_deletables:
             alternatives.append('')
@@ -80,14 +77,60 @@ class VariationProposer():
         path_variations = []
         tags = self.pos_tagger(sentence)
         tokens = sentence.split()
-        token_variations = self.get_alternatives(tokens[-1], tags[-1])
+
+
+        if tokens[-1].istitle():
+            case = 't'
+        elif tokens[-1].isupper():
+            case = 'u'
+        else:
+            case = None
+
+
+        lowered_tokens = [t.lower() for t in tokens]
+        token_variations = self.get_alternatives(lowered_tokens[-1], tags[-1])
+
         for var in token_variations:
+
+            '''
+            Do upper first, for 'I'.  Then it will be restored even if
+            not at the beginning of a sentence.
+            '''
+            if case == 'u':
+                recased_var = var.upper()
+            elif case == 't':
+                recased_var = var.title()
+            else:
+                recased_var = var
+
             if var == '':
+                # Deletion
                 path_variations.append(tokens[:-1])
             else:
-                path_variations.append(tokens[:-1] + [var])
+                # Substitution and no insertion
+                path_variations.append(tokens[:-1] + [recased_var])
+
                 for insertion_token in self.closed_class_preceder_tokens:
-                    path_variations.append(tokens[:-1] + [insertion_token] + [var])
+
+                    if len(tokens) == 1: # Substitution and insertion at beginning.
+                        insertion_token = insertion_token.title()
+                        if case != 't':
+                            path_variations.append(tokens[:-1] + [insertion_token] + [recased_var])
+                        else:
+                            path_variations.append(tokens[:-1] + [insertion_token] + [var])
+
+                    # Substitution and insertion not at beginning
+                    path_variations.append(tokens[:-1] + [insertion_token] + [recased_var])
+
         for insertion_token in self.closed_class_preceder_tokens:
-            path_variations.append(tokens[:-1] + [insertion_token] + [tokens[-1]])
+
+            possibly_recased_token = tokens[-1]
+
+            # Insertion with no deletion or substitution
+            if len(tokens) == 1:
+                insertion_token = insertion_token.title()
+                if case == 't':
+                    possibly_recased_token = tokens[-1].lower()
+
+            path_variations.append(tokens[:-1] + [insertion_token] + [possibly_recased_token])
         return path_variations

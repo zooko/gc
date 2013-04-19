@@ -20,6 +20,8 @@ insertables = ['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves',
 deletables = ['with', 'a', 'the', 'water']
 
 def pos_tagger(sentence):
+    if sentence == "Of":
+        return ["IN"]
     return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
 l_vars = ['laboured', 'labyrinths', 'laden', 'lamp', 'like', 'love', 'lover', 'loves', 'loving']
@@ -60,7 +62,7 @@ class VariationProposerTest(unittest.TestCase):
 
     def test_generate_path_variations(self):
 
-        sentence = "We loved with".lower()
+        sentence = "We loved with"
         tokens = sentence.split()
         beginning = tokens[:-1]
 
@@ -80,6 +82,16 @@ class VariationProposerTest(unittest.TestCase):
         self.assertNotIn(beginning + ['another', 'from'], path_variations, path_variations)
         self.assertNotIn(beginning + ['another', 'of'], path_variations, path_variations)
         self.assertNotIn(beginning + ['with'], path_variations, path_variations)
+
+        sentence = "We"
+        path_variations = proposer.generate_path_variations(sentence)
+        self.assertIn(['Of', 'we'], path_variations, path_variations)
+
+        sentence = "Of"
+        path_variations = proposer.generate_path_variations(sentence)
+        self.assertIn(['Of', 'of'], path_variations, path_variations)
+        self.assertIn(['From', 'of'], path_variations, path_variations)
+        self.assertIn(['From'], path_variations, path_variations)
 
 if __name__ == '__main__':
     unittest.main()
