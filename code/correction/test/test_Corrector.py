@@ -57,7 +57,7 @@ class CorrectorTest(unittest.TestCase):
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
         small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
         corrector = Corrector.Corrector(tmpipe_obj, 10, var_gen.generate_path_variations, -3.3)
 
         tokens = "This will , if not already , caused problems as there are very limited spaces for us .".lower().split()

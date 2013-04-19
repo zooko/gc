@@ -3,19 +3,19 @@
 
 class VariationProposer():
 
-    def __init__(self, pos_tagger, tag_dictionary, vocab_with_prefix, insertables, deletables):
+    def __init__(self, pos_tagger, tag_dictionary, tmpipe_obj, insertables, deletables):
         self.pos_tagger = pos_tagger
-        self.vocab_with_prefix = vocab_with_prefix
+        self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
         self.tag_dictionary = tag_dictionary
         self.tag_dictionary['AUX'] = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
         closed_class_tags = ['IN', 'DT', 'TO', 'MD', 'AUX']
         self.closed_class_preceder_tokens = set([])
-        for token in insertables:
+        for token in [i for i in insertables if tmpipe_obj.in_vocabulary(i)]:
             for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
                     self.closed_class_preceder_tokens.add(token)
         self.closed_class_deletables = set([])
-        for token in deletables:
+        for token in [d for d in deletables if tmpipe_obj.in_vocabulary(d)]:
             for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
                     self.closed_class_deletables.add(token)
@@ -31,7 +31,7 @@ class VariationProposer():
         if token in self.closed_class_deletables:
             alternatives.append('')
 
-        return alternatives
+        return set(alternatives)
 
     def levenshtein_distance(self, seq1, seq2):
         one_ago = None
@@ -54,13 +54,15 @@ class VariationProposer():
             prefix = token[0]
             suffix = token[1:]
         prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
-        relevant_tag_prefix_tokens = []
+        relevant_tag_prefix_tokens = set([])
         keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type)]
         for pt in prefix_tokens:
             for k in keys:
                 if pt in self.tag_dictionary[k]:
-                    relevant_tag_prefix_tokens.append(pt)
+                    relevant_tag_prefix_tokens.add(pt)
                     break
+        if token in relevant_tag_prefix_tokens:
+            relevant_tag_prefix_tokens.remove(token)
         return relevant_tag_prefix_tokens
 
     def get_alternatives(self, token, tag):
@@ -71,7 +73,7 @@ class VariationProposer():
             return self.closed_class_alternatives(token, 'AUX')
         if tag[:2] in ["NN", "VB"]:
             return self.open_class_alternatives(token, tag[:2])
-        return []
+        return set([])
 
     def generate_path_variations(self, sentence):
 

@@ -184,14 +184,16 @@ def correct(target, source, env):
 
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
-    insertables =  open_with_unicode(source[2].path, None, 'r')
-    deletables =  open_with_unicode(source[3].path, None, 'r')
+    insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
+    deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
 
     correctors = []
     corrections_file_objs = []
-    for i in range(len(vocabulary_sizes)):
+    tmpipe_objs = []
+    for i in range(len(all_vocabulary_sizes)):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+4].path)
-        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj.vocabulary_with_prefix, insertables, deletables)
+        tmpipe_objs.append(tmpipe_obj)
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj, insertables, deletables)
         correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability))
         corrections_file_objs.append(open_with_unicode(source[i+4].path + '_corrections', None, 'w'))
 

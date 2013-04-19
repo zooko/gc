@@ -3,6 +3,7 @@
 
 from code.correction import VariationProposer
 from collections import defaultdict
+from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest
 
 tag_dictionary = defaultdict(list)
@@ -30,7 +31,9 @@ def vocab_with_prefix(prefix):
         return ['am', 'are', 'bad', 'cue', 'did', 'is']
     return []
 
-proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, vocab_with_prefix, insertables, deletables)
+tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
+
+proposer = VariationProposer.VariationProposer(pos_tagger, tag_dictionary, tmpipe_obj, insertables, deletables)
 
 class VariationProposerTest(unittest.TestCase):
 
@@ -41,16 +44,16 @@ class VariationProposerTest(unittest.TestCase):
         tags = pos_tagger(sentence)
 
         proposed = proposer.get_alternatives(tokens[0], tags[0])
-        self.assertListEqual(proposed, [])
+        self.assertSetEqual(proposed, set([]), proposed)
 
         proposed = proposer.get_alternatives(tokens[1], tags[1])
-        self.assertListEqual(proposed, ['like', 'love', 'loving'])
+        self.assertSetEqual(proposed, set(['like', 'love']), proposed)
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
-        self.assertListEqual(proposed, ["from", "of", ""], proposed)
+        self.assertSetEqual(proposed, set(["from", "of", ""]), proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertListEqual(proposed, ["the", "any", "another", ''], proposed)
+        self.assertSetEqual(proposed, set(["the", "any", "another", '']), proposed)
 
     def test_levenshtein_distance(self):
         pass
