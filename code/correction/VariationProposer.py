@@ -97,7 +97,7 @@ class VariationProposer():
 
         if tag in ["IN", "DT"]:
             alternatives = self.closed_class_alternatives(token, tag)
-        elif token in ["AUX"]:
+        elif token in self.tag_dictionary["AUX"]:
             alternatives = self.closed_class_alternatives(token, 'AUX')
         elif tag[:2] in ["NN", "VB"]:
             alternatives = self.open_class_alternatives(token, tag)
