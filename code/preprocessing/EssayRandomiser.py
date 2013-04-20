@@ -27,7 +27,7 @@ class Randomiser():
 
     def choose_outfiles(self):
         x = self.rand_obj.random()
-        if x < .8: return self.train_conll_file_obj, self.train_m2_file_obj, self.train_m2_5_file_obj
+        if x < .998: return self.train_conll_file_obj, self.train_m2_file_obj, self.train_m2_5_file_obj
         return self.devel_conll_file_obj, self.devel_m2_file_obj, self.devel_m2_5_file_obj
         
     def randomise(self):
