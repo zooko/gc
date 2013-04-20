@@ -115,10 +115,14 @@ class VariationProposer():
         tokens = sentence.split()
 
 
-        if tokens[-1].istitle():
-            case = 't'
-        elif tokens[-1].isupper():
+        '''
+        Do upper first, for 'I'.  Then it will be restored even if
+        not at the beginning of a sentence.
+        '''
+        if tokens[-1].isupper():
             case = 'u'
+        elif tokens[-1].istitle():
+            case = 't'
         else:
             case = None
 
