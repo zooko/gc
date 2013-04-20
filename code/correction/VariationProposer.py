@@ -62,7 +62,7 @@ class VariationProposer():
         if tag_type == 'VB':
             keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag]
         else:
-            assert(tag_type == 'NN', tag_type)
+            assert tag_type == 'NN', tag_type
             if tag == 'NNS' and 'NN' in self.tag_dictionary.keys():
                 keys = ['NN']
             elif tag == 'NN' and 'NNS' in self.tag_dictionary.keys():
@@ -72,7 +72,7 @@ class VariationProposer():
             elif tag == 'NNP' and 'NNPS' in self.tag_dictionary.keys():
                 keys = ['NNPS']
             else:
-                assert(False, tag)
+                assert False, tag
 
         for pt in prefix_tokens:
             for k in keys:
