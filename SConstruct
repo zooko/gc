@@ -224,8 +224,6 @@ def score_corrections(target, source, env):
 
 # Hard coding this for now... TODO make variables
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
-error_probability = -1.3
-width = 5
 
 # Get commandline configuration:
 
@@ -239,6 +237,16 @@ try:
 except:
     print "Usage: scons data_directory=DIR variables target"
     raise Exception
+
+try:
+    error_probability = float([x[1] for x in ARGLIST if x[0] == 'error_probability'][0])
+except:
+    error_probability = -1.3
+
+try:
+    width = int([x[1] for x in ARGLIST if x[0] == 'width'][0])
+except:
+    width = 9
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
