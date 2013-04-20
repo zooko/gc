@@ -201,8 +201,14 @@ def correct(target, source, env):
     for line in open_with_unicode(source[0].path, None, 'r'):
         if line == '\n':
             if tokens:
-                for i in range(len(correctors)):
+                for i in range(len(vocabulary_sizes)):
                     corrections_file_objs[i].write(' '.join(correctors[i].get_correction(tokens)) + '\n')
+                # This section not implemented fully yet, don't use!
+                for j in range(len(pos_vocabulary_sizes)):
+                    i = len(vocabulary_sizes) + j
+                    pos_filled_tokens = POSFiller.fill_sentence([tmpipe_objs[i].in_vocabulary], tagger_pipe.tags_list, ' '.join(tokens))[0]
+                    corrections_file_objs[i].write(' '.join(correctors[i].get_correction(pos_filled_tokens)))
+                #####
                 tokens = []
         else:
             tokens.append(line.split()[4])
@@ -211,7 +217,7 @@ def correct(target, source, env):
 
 def score_corrections(target, source, env):
 
-    for i in range(len(vocabulary_sizes)):
+    for i in range(len(all_vocabulary_sizes)):
         print source[i].path
         scorer = subprocess.Popen(['python', data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=-1)
         scorer.wait()
@@ -297,10 +303,10 @@ env.pos_trigram_models([data_directory + 'pos_trigram_model_' + str(size) + 'K.a
 
 env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa' for size in pos_vocabulary_sizes])
 
-env.corrections([data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes] + [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa_corrections' for size in pos_vocabulary_sizes] , [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes] + [data_directory + 'pos_trigram_model_' + str(size) +'K.arpa' for size in pos_vocabulary_sizes])
 
-env.Alias('corrections', [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes])
+env.Alias('corrections', [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes] + [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa_corrections' for size in pos_vocabulary_sizes])
 
-env.scores([data_directory + 'scores_' + str(size) for size in vocabulary_sizes], [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes])
+env.scores([data_directory + 'scores_trigram_model_' + str(size) for size in vocabulary_sizes] + [data_directory + 'scores_pos_trigram_model_' + str(size) for size in pos_vocabulary_sizes], [data_directory + 'trigram_model_' + str(size) + 'K.arpa_corrections' for size in vocabulary_sizes] + [data_directory + 'pos_trigram_model_' + str(size) + 'K.arpa_corrections' for size in pos_vocabulary_sizes])
 
-env.Alias('scores', [data_directory + 'scores_' + str(size) for size in vocabulary_sizes])
+env.Alias('scores', [data_directory + 'scores_trigram_model_' + str(size) for size in vocabulary_sizes] + [data_directory + 'scores_pos_trigram_model_' + str(size) for size in pos_vocabulary_sizes])
