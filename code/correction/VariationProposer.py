@@ -2,6 +2,7 @@
 # VariationProposer.py
 
 from collections import OrderedDict
+from nltk.stem import PorterStemmer
 
 class VariationProposer():
 
@@ -24,6 +25,7 @@ class VariationProposer():
         self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
         self.cache_size = 50
+        self.stemmer = PorterStemmer()
 
     def closed_class_alternatives(self, token, tag):
 
@@ -56,7 +58,8 @@ class VariationProposer():
         else:
             prefix = token[0]
             suffix = token[1:]
-        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
+#        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
+        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.stemmer.stem(t) == self.stemmer.stem(token)]
 
         relevant_tag_prefix_tokens = set([])
         if tag_type == 'VB':
