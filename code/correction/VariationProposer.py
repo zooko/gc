@@ -86,7 +86,7 @@ class VariationProposer():
     def get_alternatives(self, token, tag):
 
         if self.cache.has_key( (token, tag) ):
-            print "Cached!"
+#            print "Cached!"
             alternatives = self.cache[(token, tag)]
             del(self.cache[(token, tag)])
             self.cache[(token, tag)] = alternatives
