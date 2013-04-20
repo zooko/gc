@@ -111,7 +111,7 @@ class Corrector():
            word1 = path[-3].lower()
            word2 = path[-2].lower()
            word3 = path[-1].lower()
-           return self.trigram_model_pipe.trigram_probability([word1, word2, word2])
+           return self.trigram_model_pipe.trigram_probability([word1, word2, word3])
 
 
     def get_correction(self, tokens):
