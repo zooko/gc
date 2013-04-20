@@ -3,6 +3,7 @@
 
 from code.correction import Corrector, VariationProposer
 from code.preprocessing import StanfordTaggerPipe
+from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest, json
 
 def probability_of_error_function():
@@ -24,6 +25,10 @@ def path_probability_function(tokens):
         return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
     return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
 
+stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
+module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
+model_path = 'stanford-tagger/english-left3words-distsim.tagger'
+
 class CorrectorTest(unittest.TestCase):
 
     def test_beam_search(self):
@@ -42,17 +47,9 @@ class CorrectorTest(unittest.TestCase):
         best_tokens = Corrector.beam_search(tokens, width, probability_of_error_function, path_probability_function, variation_generator)
         self.assertListEqual(best_tokens, ['This', 'isn\'t', 'bad', '...'])
 
-    def test_get_correction(self):
-        '''
-        This is a regression test and a test of pieces working
-        together, not of the correctness of results.
-        '''
+    def test_trigram_path_probability(self):
 
-        from BackOffTrigramModel import BackOffTrigramModelPipe
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
-        stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
-        module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
-        model_path = 'stanford-tagger/english-left3words-distsim.tagger'
         tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
@@ -64,12 +61,26 @@ class CorrectorTest(unittest.TestCase):
         tpp = corrector.trigram_path_probability(tokens)
         self.assertAlmostEqual(tpp, -4.185007, msg=tpp)
 
+    def test_get_correction(self):
+        '''
+        This is a regression test and a test of pieces working
+        together, not of the correctness of results.
+        '''
+
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
+        tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
+        pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
+        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        corrector = Corrector.Corrector(tmpipe_obj, 25, var_gen.generate_path_variations, -1.3)
+
         tokens = "This will , if not already , caused problems as there are very limited spaces for us .".lower().split()
         result = corrector.get_correction(tokens)
         self.assertListEqual(result, ['this', 'will', ',', 'if', 'not', 'already', ',', 'caused', 'problems', 'as', 'there', 'are', 'very', 'limited', 'spaces', 'for', 'us', '.'], result)
         tokens = u"I agree to a large extent that current policies have helped to ease the aging process .".split()
         result = corrector.get_correction(tokens)
         self.assertListEqual(result, [u'I', u'agree', u'to', u'a', u'large', u'extent', u'that', u'current', u'policies', u'have', u'helped', u'to', u'ease', u'the', u'aging', u'process', u'.'] , result)
-        
+
 if __name__ == '__main__':
     unittest.main()
