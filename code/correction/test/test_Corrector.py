@@ -12,7 +12,7 @@ def variation_generator(sentence):
     tokens = sentence.split()
     token = tokens[-1]
     if len(token) > 2:
-        return [ tokens ]
+        return [ ]
     else:
         if token == '.':
             return [ tokens[:-1] + [var] for var in  [token + x for x in 'abcde'] ] + [ tokens[:-1] ]

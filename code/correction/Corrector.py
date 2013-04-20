@@ -33,7 +33,7 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
 
             token_string = ' '.join(path_with_next_original_token)
             for path_variation in variation_generator(token_string):
-                assert(path_variation != path_with_next_original_token)
+                assert path_variation != path_with_next_original_token, path_variation
 #                print "I'm a variation:", path_variation
 
                 # If we had a deletion:
