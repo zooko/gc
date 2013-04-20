@@ -1,6 +1,8 @@
 # L. Amber Wilcox-O'Hearn 2013
 # VariationProposer.py
 
+from collections import OrderedDict
+
 class VariationProposer():
 
     def __init__(self, pos_tagger, tag_dictionary, tmpipe_obj, insertables, deletables):
@@ -20,6 +22,8 @@ class VariationProposer():
                 if token in tag_dictionary[tag]:
                     self.closed_class_deletables.add(token)
         self.tmpipe_obj = tmpipe_obj
+        self.cache = OrderedDict()
+        self.cache_size = 50
 
     def closed_class_alternatives(self, token, tag):
 
@@ -77,19 +81,32 @@ class VariationProposer():
                     break
         if token in relevant_tag_prefix_tokens:
             relevant_tag_prefix_tokens.remove(token)
-        if token == 'agree':
-            print "Tag, tag type, keys: ", tag, tag_type, keys
         return relevant_tag_prefix_tokens
 
     def get_alternatives(self, token, tag):
 
+        if self.cache.has_key( (token, tag) ):
+            print "Cached!"
+            alternatives = self.cache[(token, tag)]
+            del(self.cache[(token, tag)])
+            self.cache[(token, tag)] = alternatives
+            return alternatives
+
         if tag in ["IN", "DT"]:
-            return self.closed_class_alternatives(token, tag)
-        if token in ["AUX"]:
-            return self.closed_class_alternatives(token, 'AUX')
-        if tag[:2] in ["NN", "VB"]:
-            return self.open_class_alternatives(token, tag)
-        return set([])
+            alternatives = self.closed_class_alternatives(token, tag)
+        elif token in ["AUX"]:
+            alternatives = self.closed_class_alternatives(token, 'AUX')
+        elif tag[:2] in ["NN", "VB"]:
+            alternatives = self.open_class_alternatives(token, tag)
+        else:
+            alternatives = set([])
+
+        print "Token, tag, alternatives: ", token, tag, alternatives
+        self.cache[(token, tag)] = alternatives
+        if len(self.cache) > self.cache_size:
+            self.cache.popitem(last=False)
+
+        return alternatives
 
     def generate_path_variations(self, sentence):
 
@@ -108,8 +125,6 @@ class VariationProposer():
 
         lowered_tokens = [t.lower() for t in tokens]
         token_variations = self.get_alternatives(lowered_tokens[-1], tags[-1])
-        print "Token: ", tokens[-1]
-        print "Token variations: ", token_variations
 
         for var in token_variations:
 
