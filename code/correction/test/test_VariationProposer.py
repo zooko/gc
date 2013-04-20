@@ -49,7 +49,7 @@ class VariationProposerTest(unittest.TestCase):
         self.assertSetEqual(proposed, set([]), proposed)
 
         proposed = proposer.get_alternatives(tokens[1], tags[1])
-        self.assertSetEqual(proposed, set(['like', 'love']), proposed)
+        self.assertSetEqual(proposed, set(['love']), proposed)
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
         self.assertSetEqual(proposed, set(["from", "of", ""]), proposed)
