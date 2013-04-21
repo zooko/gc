@@ -53,6 +53,8 @@ def randomise_essays(target, source, env):
 
 def training_m2_5_to_gold(target, source, env):
      """
+     In addition to creating the gold file, we also make json'ed
+     insertables and deletables files.
      """
      train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
      train_gold_file_obj = open_with_unicode(target[0].path, None, 'w')
