@@ -1,8 +1,6 @@
 # L. Amber Wilcox-O'Hearn 2013
 # Corrector.py
 
-from code.preprocessing import POSFiller
-
 def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_generator, verbose=False):
     """
     For each token in the tokens, put all variations on every
