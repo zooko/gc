@@ -82,5 +82,25 @@ class CorrectorTest(unittest.TestCase):
         result = corrector.get_correction(tokens)
         self.assertListEqual(result, [u'I', u'agree', u'to', u'a', u'large', u'extent', u'that', u'current', u'policies', u'have', u'helped', u'to', u'ease', u'the', u'aging', u'process', u'.'] , result)
 
+    def test_pos_correction(self):
+        pass
+
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/pos_trigram_model_0.1K.arpa')
+        tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
+        pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
+        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, pos=True, tagger=tagger_pipe.tags_list)
+
+        tokens = u'The dogs is black'.split()
+        best_tokens = corrector.get_correction(tokens)
+        self.assertListEqual(best_tokens, [u'The', u'dogs', u'is', u'black'], best_tokens)
+
+        tokens = u'I am walked home'.split()
+        best_tokens = corrector.get_correction(tokens)
+        self.assertListEqual(best_tokens, [u'Be', u'I', u'to', u'am', u'the', u'walked', u'home'], best_tokens)
+
+
 if __name__ == '__main__':
     unittest.main()
