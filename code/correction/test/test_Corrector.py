@@ -95,11 +95,11 @@ class CorrectorTest(unittest.TestCase):
 
         tokens = u'The dogs is black'.split()
         best_tokens = corrector.get_correction(tokens)
-        self.assertListEqual(best_tokens, [u'The', u'dogs', u'is', u'black'], best_tokens)
+        self.assertListEqual(best_tokens, [u'dogs', u'have', u'black'], best_tokens)
 
-        tokens = u'I am walked home'.split()
+        tokens = u"I agree to a large extent that current policies have helped to ease the aging process .".split()
         best_tokens = corrector.get_correction(tokens)
-        self.assertListEqual(best_tokens, [u'Be', u'I', u'to', u'am', u'the', u'walked', u'home'], best_tokens)
+        self.assertListEqual(best_tokens, [u'Be', u'I', u'so', u'agree', u'to', u'have', u'a', u'large', u'extent', u'that', u'current', u'policies', u'have', u'will', u'helped', u'to', u'ease', u'the', u'aging', u'process', u'.'], best_tokens)
 
 
 if __name__ == '__main__':
