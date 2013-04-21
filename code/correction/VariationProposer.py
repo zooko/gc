@@ -157,7 +157,7 @@ class VariationProposer():
 
                     if len(tokens) == 1: # Substitution and insertion at beginning.
                         insertion_token = insertion_token.title()
-                        if case != 't':
+                        if case != 't' and var != 'a':
                             path_variations.append(tokens[:-1] + [insertion_token] + [recased_var])
                         else:
                             path_variations.append(tokens[:-1] + [insertion_token] + [var])
