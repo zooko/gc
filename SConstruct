@@ -107,6 +107,9 @@ def create_trigram_models(target, source, env):
     return None
 
 def get_pos_data(target, source, env):
+    '''
+    Creates pos_dictionary and POS-filled training set.
+    '''
 
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
 
