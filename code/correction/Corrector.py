@@ -96,7 +96,7 @@ def beam_search(tokens, width, prob_of_err_func, path_prob_func, variation_gener
 
 class Corrector():
 
-    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=False, tagger=None):
+    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, tagger=None, pos_tmpipe_obj=None):
 
         self.trigram_model_pipe = trigram_model_pipe
         self.width = width
@@ -105,11 +105,12 @@ class Corrector():
         self.verbose = verbose
         self.pos = pos
         self.tagger = tagger
+        self.pos_tmpipe_obj = pos_tmpipe_obj
 
     def get_error_prob(self):
        return self.error_prob
 
-    def trigram_path_probability(self, path, lower=True):
+    def trigram_path_probability(self, path, pipe='t', lower=True):
        '''
        path is a list of tokens with at least one element.
        '''
@@ -122,12 +123,20 @@ class Corrector():
        if self.verbose:
            print word1, word2, word3
 
-       return self.trigram_model_pipe.trigram_probability([word1, word2, word3])
+       if pipe == 't':
+           return self.trigram_model_pipe.trigram_probability([word1, word2, word3])
+       elif pipe == 'p':
+           return self.pos_tmpipe_obj.trigram_probability([word1, word2, word3])
+
 
     def pos_trigram_path_probability(self, path):
 
        tags = self.tagger(u' '.join(path))
-       return self.trigram_path_probability(tags, lower=False)
+       pos_prob = self.trigram_path_probability(tags, pipe='p', lower=False)
+       if self.pos == 1:
+           return pos_prob
+
+       return self.pos * pos_prob + (1-self.pos) * self.trigram_path_probability(path)
 
     def get_correction(self, tokens):
 
