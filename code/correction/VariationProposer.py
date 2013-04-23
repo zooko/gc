@@ -6,33 +6,55 @@ from nltk.stem import PorterStemmer
 
 class VariationProposer():
 
-    def __init__(self, pos_tagger, tag_dictionary, tmpipe_obj, insertables, deletables):
-        self.pos_tagger = pos_tagger
+    def __init__(self, tag_dictionary, tmpipe_obj, insertables, deletables):
         self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
         self.tag_dictionary = tag_dictionary
-        self.tag_dictionary['AUX'] = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
-        closed_class_tags = ['IN', 'DT', 'TO', 'MD', 'AUX']
+        self.AUX = {'are': 'VBP',
+               'be': 'VB',
+               'been': 'VBN',
+               'being': 'VBG',
+               'did': 'VBD',
+               'do': 'VB',
+               'does': 'VBZ',
+               'get': 'VB',
+               'getting': 'VBG',
+               'got': 'VBD',
+               'had': 'VBD',
+               'has': 'VBZ',
+               'have': 'VB',
+               'having': 'VBG',
+               'is': 'VBZ',
+               'was': 'VBD',
+               'were': 'VBD'}
+        closed_class_tags = ['IN', 'DT', 'TO', 'MD']
         self.closed_class_preceder_tokens = set([])
         for token in [i for i in insertables if tmpipe_obj.in_vocabulary(i)]:
             for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
-                    self.closed_class_preceder_tokens.add(token)
+                    self.closed_class_preceder_tokens.add((token, tag))
+                elif token in self.AUX.keys():
+                    self.closed_class_preceder_tokens.add((token, self.AUX[token]))
         self.closed_class_deletables = set([])
         for token in [d for d in deletables if tmpipe_obj.in_vocabulary(d)]:
             for tag in closed_class_tags:
                 if token in tag_dictionary[tag]:
-                    self.closed_class_deletables.add(token)
+                    self.closed_class_deletables.add((token, tag))
+                elif token in self.AUX.keys():
+                    self.closed_class_deletables.add((token, self.AUX[token]))
         self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
-        self.cache_size = 50
+        self.cache_size = 500
         self.stemmer = PorterStemmer()
 
     def closed_class_alternatives(self, token, tag):
 
-        alternatives = [alt for alt in self.tag_dictionary[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
+        if tag == 'AUX':
+            alternatives = [(k,v) for k,v in self.AUX.iteritems() if k != token and self.tmpipe_obj.in_vocabulary(k)]
+        else:
+            alternatives = [(alt, tag) for alt in self.tag_dictionary[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
 
-        if token in self.closed_class_deletables:
-            alternatives.append('')
+        if (token, tag) in self.closed_class_deletables:
+            alternatives.append(())
 
         return set(alternatives)
 
@@ -61,7 +83,7 @@ class VariationProposer():
 #        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.levenshtein_distance(suffix, t[len(prefix):]) <= 4]
         prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.stemmer.stem(t) == self.stemmer.stem(token)]
 
-        relevant_tag_prefix_tokens = set([])
+        relevant_tag_prefix_tokens_with_tag = set([])
         if tag_type == 'VB':
             keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag]
         else:
@@ -80,11 +102,11 @@ class VariationProposer():
         for pt in prefix_tokens:
             for k in keys:
                 if pt in self.tag_dictionary[k]:
-                    relevant_tag_prefix_tokens.add(pt)
+                    relevant_tag_prefix_tokens_with_tag.add((pt, k))
                     break
-        if token in relevant_tag_prefix_tokens:
-            relevant_tag_prefix_tokens.remove(token)
-        return relevant_tag_prefix_tokens
+        if (token, tag) in relevant_tag_prefix_tokens_with_tag:
+            relevant_tag_prefix_tokens_with_tag.remove((token, tag))
+        return relevant_tag_prefix_tokens_with_tag
 
     def get_alternatives(self, token, tag):
 
@@ -96,83 +118,83 @@ class VariationProposer():
 
         if tag in ["IN", "DT"]:
             alternatives = self.closed_class_alternatives(token, tag)
-        elif token in self.tag_dictionary["AUX"]:
+        elif token in self.AUX.keys():
             alternatives = self.closed_class_alternatives(token, 'AUX')
         elif tag[:2] in ["NN", "VB"]:
             alternatives = self.open_class_alternatives(token, tag)
         else:
             alternatives = set([])
 
-        print "Token, tag, alternatives: ", token, tag, alternatives
+#        print "Token, tag, alternatives: ", token, tag, alternatives
         self.cache[(token, tag)] = alternatives
         if len(self.cache) > self.cache_size:
             self.cache.popitem(last=False)
 
         return alternatives
 
-    def generate_path_variations(self, sentence):
+    def generate_path_variations(self, tagged_sentence):
 
         path_variations = []
-        tags = self.pos_tagger(sentence)
-        tokens = sentence.split()
 
+        last_token = tagged_sentence[-1][0]
+        last_tag = tagged_sentence[-1][1]
 
         '''
         Do upper first, for 'I'.  Then it will be restored even if
         not at the beginning of a sentence.
         '''
-        if tokens[-1].isupper():
+        if last_token.isupper():
             case = 'u'
-        elif tokens[-1].istitle():
+        elif last_token.istitle():
             case = 't'
         else:
             case = None
 
-
-        lowered_tokens = [t.lower() for t in tokens]
-        token_variations = self.get_alternatives(lowered_tokens[-1], tags[-1])
+        token_variations = self.get_alternatives(last_token.lower(), last_tag)
 
         for var in token_variations:
 
-            '''
-            Do upper first, for 'I'.  Then it will be restored even if
-            not at the beginning of a sentence.
-            '''
-            if case == 'u':
-                recased_var = var.upper()
-            elif case == 't':
-                recased_var = var.title()
-            else:
-                recased_var = var
-
-            if var == '':
+            if var == ():
                 # Deletion
-                path_variations.append(tokens[:-1])
+                path_variations.append(tagged_sentence[:-1])
+
             else:
+                '''
+                Do upper first, for 'I'.  Then it will be restored even if
+                not at the beginning of a sentence.
+                '''
+                if case == 'u':
+                    recased_var = (var[0].upper(), var[1])
+                elif case == 't':
+                    recased_var = (var[0].title(), var[1])
+                else:
+                    recased_var = var
+
                 # Substitution and no insertion
-                path_variations.append(tokens[:-1] + [recased_var])
+                path_variations.append(tagged_sentence[:-1] + [recased_var])
 
                 for insertion_token in self.closed_class_preceder_tokens:
 
-                    if len(tokens) == 1: # Substitution and insertion at beginning.
-                        insertion_token = insertion_token.title()
-                        if case != 't' and var != 'a':
-                            path_variations.append(tokens[:-1] + [insertion_token] + [recased_var])
+                    if len(tagged_sentence) == 1: # Substitution and insertion at beginning.
+                        insertion_token = (insertion_token[0].title(), insertion_token[1])
+                        if case != 't' and var[0] != 'a':
+                            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [recased_var])
                         else:
-                            path_variations.append(tokens[:-1] + [insertion_token] + [var])
+                            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [var])
 
-                    # Substitution and insertion not at beginning
-                    path_variations.append(tokens[:-1] + [insertion_token] + [recased_var])
+                    else:
+                        # Substitution and insertion not at beginning
+                        path_variations.append(tagged_sentence[:-1] + [insertion_token] + [recased_var])
 
         for insertion_token in self.closed_class_preceder_tokens:
 
-            possibly_recased_token = tokens[-1]
+            possibly_recased_token = tagged_sentence[-1]
 
             # Insertion with no deletion or substitution
-            if len(tokens) == 1:
-                insertion_token = insertion_token.title()
+            if len(tagged_sentence) == 1:
+                insertion_token = (insertion_token[0].title(), insertion_token[1])
                 if case == 't':
-                    possibly_recased_token = tokens[-1].lower()
+                    possibly_recased_token = (last_token.lower(), last_tag)
 
-            path_variations.append(tokens[:-1] + [insertion_token] + [possibly_recased_token])
+            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [possibly_recased_token])
         return path_variations
