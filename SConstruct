@@ -158,6 +158,29 @@ def make_pos_trigram_models(target, source, env):
     return None
 
 def correct(target, source, env):
+    return statprof_correct(target, source, env)
+    # return cProfile_correct(target, source, env)
+
+def cProfile_correct(target, source, env):
+    import cProfile
+    p = cProfile.Profile()
+    p.enable()
+    try:
+        return real_correct(target, source, env)
+    finally:
+        p.disable()
+        p.print_stats()
+
+def statprof_correct(target, source, env):
+    import statprof
+    statprof.start()
+    try:
+        return real_correct(target, source, env)
+    finally:
+        statprof.stop()
+        statprof.display()
+
+def real_correct(target, source, env):
 
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
     insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
