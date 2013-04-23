@@ -187,6 +187,7 @@ def real_correct(target, source, env):
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
     pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[4].path)
 
+    variation_proposers = []
     correctors = []
     corrections_file_objs = []
     tmpipe_objs = []
@@ -194,6 +195,7 @@ def real_correct(target, source, env):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+5].path)
         tmpipe_objs.append(tmpipe_obj)
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, insertables, deletables)
+        variation_proposers.append(var_gen)
         correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_tmpipe_obj=pos_tmpipe_obj))
         corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
@@ -209,6 +211,9 @@ def real_correct(target, source, env):
         else:
             split_line = line.split()
             tagged_tokens.append( (split_line[4], split_line[5]) )
+
+    for i in range(len(variation_proposers)):
+        variation_proposers[i].print_cache_stats()
 
     return None
 

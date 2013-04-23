@@ -44,6 +44,7 @@ class VariationProposer():
         self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
         self.cache_size = 500
+        self.cache_stats = [0,0]
         self.stemmer = PorterStemmer()
 
     def closed_class_alternatives(self, token, tag):
@@ -111,11 +112,13 @@ class VariationProposer():
     def get_alternatives(self, token, tag):
 
         if self.cache.has_key( (token, tag) ):
+            self.cache_stats[0] += 1
             alternatives = self.cache[(token, tag)]
             del(self.cache[(token, tag)])
             self.cache[(token, tag)] = alternatives
             return alternatives
 
+        self.cache_stats[1] += 1
         if tag in ["IN", "DT"]:
             alternatives = self.closed_class_alternatives(token, tag)
         elif token in self.AUX.keys():
@@ -198,3 +201,8 @@ class VariationProposer():
 
             path_variations.append(tagged_sentence[:-1] + [insertion_token] + [possibly_recased_token])
         return path_variations
+
+    def print_cache_stats(self):
+
+        print "Cache hits:", self.cache_stats[0]
+        print "Cache misses:", self.cache_stats[1]
