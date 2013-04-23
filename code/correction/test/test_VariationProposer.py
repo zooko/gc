@@ -52,9 +52,6 @@ class VariationProposerTest(unittest.TestCase):
         proposed = proposer.get_alternatives(tokens[3], tags[3])
         self.assertSetEqual(proposed, set([("the", 'DT'), ("any", 'DT'), ("another", 'DT'), ()]), proposed)
 
-    def test_levenshtein_distance(self):
-        pass
-
     def test_generate_path_variations(self):
     #return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
