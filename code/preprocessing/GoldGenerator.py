@@ -5,6 +5,7 @@
 # corrected sentence per line.
 
 import json
+from collections import Counter
 
 def correct_sentence_and_collect_insertables_and_deletables(sentence, corrections, insertables, deletables):
     tokens = sentence.split()[1:]
@@ -27,19 +28,19 @@ def correct_sentence_and_collect_insertables_and_deletables(sentence, correction
             original_tokens = tokens[sub[0][0]:sub[0][1]]
             for t in sub_tokens:
                 if t not in original_tokens:
-                    insertables.add(t.lower())
+                    insertables[t.lower()] += 1
         if len(sub_tokens) < sub[0][1] - sub[0][0]: # we have a deleted word
             original_tokens = tokens[sub[0][0]:sub[0][1]]
             for t in original_tokens:
                 if t not in sub_tokens:
-                    deletables.add(t.lower())
+                    deletables[t.lower()] += 1
     corrected += " ".join(tokens[index:])
     return " ".join(corrected.split()) + '\n'
 
 def correct_file(m2_file_obj, gold_file_obj, ins_file_obj, del_file_obj):
     corrections = []
-    insertables = set([])
-    deletables = set([])
+    insertables = Counter()
+    deletables = Counter()
     new_sentence = True
     for line in m2_file_obj:
         if line.startswith("S "):
@@ -55,8 +56,8 @@ def correct_file(m2_file_obj, gold_file_obj, ins_file_obj, del_file_obj):
             corrections = []
             new_sentence = True
 
-    json.dump(list(insertables), ins_file_obj)
-    json.dump(list(deletables), del_file_obj)
+    json.dump(dict(insertables.most_common(40)).keys(), ins_file_obj)
+    json.dump(dict(deletables.most_common(40)).keys(), del_file_obj)
 
 if __name__ == '__main__':
     import sys
