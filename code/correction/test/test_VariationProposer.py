@@ -6,15 +6,15 @@ from collections import defaultdict
 from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest
 
-tag_dictionary = defaultdict(list)
-tag_dictionary['DT'] = ["a", "the", "any", "another"]
-tag_dictionary["IN"] = ["with", "from", "of"]
-tag_dictionary["CC"] = ["and", "but", "or"]
-tag_dictionary["VB"] = ["like", "love"]
-tag_dictionary["VBD"] = ['loved']
-tag_dictionary["VBG"] = ['loving']
-tag_dictionary['TO'] = ['to']
-tag_dictionary['MD'] = ['might', 'could']
+tag_dictionary = defaultdict(dict)
+tag_dictionary['DT'] = {"a": 22, "the": 40, "any": 2, "another": 1}
+tag_dictionary["IN"] = {"with":40, "from":40, "of":40}
+tag_dictionary["CC"] = {"and":40, "but":40, "or":40}
+tag_dictionary["VB"] = {"like":40, "love":40}
+tag_dictionary["VBD"] = {'loved':40}
+tag_dictionary["VBG"] = {'loving':40}
+tag_dictionary['TO'] = {'to':40}
+tag_dictionary['MD'] = {'might':40, 'could':40}
 
 insertables = ['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need']
 deletables = ['with', 'a', 'the', 'water']

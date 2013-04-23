@@ -1,14 +1,16 @@
 # L. Amber Wilcox-O'Hearn 2013
 # VariationProposer.py
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict, Counter
 from nltk.stem import PorterStemmer
 
 class VariationProposer():
 
     def __init__(self, tag_dictionary, tmpipe_obj, insertables, deletables):
         self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
-        self.tag_dictionary = tag_dictionary
+        self.tag_dictionary = defaultdict(list)
+        for tag, token_count_dict in tag_dictionary.iteritems():
+            self.tag_dictionary[tag] = token_count_dict.keys()
         self.AUX = {'are': 'VBP',
                'be': 'VB',
                'been': 'VBN',
@@ -41,6 +43,10 @@ class VariationProposer():
                     self.closed_class_deletables.add((token, tag))
                 elif token in self.AUX.keys():
                     self.closed_class_deletables.add((token, self.AUX[token]))
+        self.closed_class_substitutables = {}
+        for tag in closed_class_tags:
+            counter = Counter(tag_dictionary[tag])
+            self.closed_class_substitutables[tag] = dict(counter.most_common(5)).keys()
         self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
         self.cache_size = 500
@@ -52,7 +58,7 @@ class VariationProposer():
         if tag == 'AUX':
             alternatives = [(k,v) for k,v in self.AUX.iteritems() if k != token and self.tmpipe_obj.in_vocabulary(k)]
         else:
-            alternatives = [(alt, tag) for alt in self.tag_dictionary[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
+            alternatives = [(alt, tag) for alt in self.closed_class_substitutables[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
 
         if (token, tag) in self.closed_class_deletables:
             alternatives.append(())

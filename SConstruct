@@ -7,6 +7,7 @@ import sys
 del sys.modules['pickle']
 
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, json
+from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe, POSFiller
@@ -119,8 +120,7 @@ def get_pos_data(target, source, env):
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     pos_training_file_obj = open_with_unicode(target[1].path, None, 'w')
     closed_class_pos_training_file_obj = open_with_unicode(target[2].path, None, 'w')
-    from collections import defaultdict
-    pos_dictionary_set = defaultdict(set)
+    pos_dictionary_set = defaultdict()
 
     print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
     line_number = 1
@@ -134,16 +134,17 @@ def get_pos_data(target, source, env):
                 closed_class_pos_training_file_obj.write(t + u' ')
             else:
                 closed_class_pos_training_file_obj.write(w.lower() + u' ')
-            pos_dictionary_set[t].add(w.lower())
+            if not pos_dictionary_set.has_key(t):
+                pos_dictionary_set[t] = Counter()
+            pos_dictionary_set[t][w.lower()] += 1
+
         pos_training_file_obj.write('\n')
         closed_class_pos_training_file_obj.write('\n')
         line_number += 1
 
-    pos_dictionary = defaultdict(list)
+    pos_dictionary = defaultdict(dict)
     for k,v in pos_dictionary_set.iteritems():
-        pos_dictionary[k] = list(v)
-    for key in pos_dictionary.keys():
-        pos_dictionary[key].sort()
+        pos_dictionary[k] = dict(v)
 
     pos_dictionary_file_obj = open_with_unicode(target[0].path, None, 'w')
     pos_dictionary_file_obj.write(json.dumps(pos_dictionary))
