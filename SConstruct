@@ -159,7 +159,6 @@ def make_pos_trigram_models(target, source, env):
 
 def correct(target, source, env):
 
-    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
     insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
@@ -171,20 +170,22 @@ def correct(target, source, env):
     for i in range(len(vocabulary_sizes)):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+5].path)
         tmpipe_objs.append(tmpipe_obj)
-        var_gen = VariationProposer.VariationProposer(tagger_pipe.tags_list, pos_dictionary, tmpipe_obj, insertables, deletables)
-        correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, tagger=tagger_pipe.tags_list, pos_tmpipe_obj=pos_tmpipe_obj))
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, insertables, deletables)
+        correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_tmpipe_obj=pos_tmpipe_obj))
         corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
-    tokens = []
+    tagged_tokens = []
     for line in open_with_unicode(source[0].path, None, 'r'):
         if line == '\n':
-            if tokens:
+            if tagged_tokens:
                 for i in range(len(vocabulary_sizes)):
-                    corrections_file_objs[i].write(' '.join(correctors[i].get_correction(tokens)) + '\n')
+                    correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
+                    corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
                     corrections_file_objs[i].flush()
-                tokens = []
+                tagged_tokens = []
         else:
-            tokens.append(line.split()[4])
+            split_line = line.split()
+            tagged_tokens.append( (split_line[4], split_line[5]) )
 
     return None
 
