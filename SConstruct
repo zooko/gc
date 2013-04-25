@@ -159,7 +159,8 @@ def make_pos_trigram_models(target, source, env):
     return None
 
 def correct(target, source, env):
-    return statprof_correct(target, source, env)
+    return real_correct(target, source, env)
+    #return statprof_correct(target, source, env)
     # return cProfile_correct(target, source, env)
 
 def cProfile_correct(target, source, env):
