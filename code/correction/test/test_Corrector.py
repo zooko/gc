@@ -61,6 +61,25 @@ class CorrectorTest(unittest.TestCase):
         tpp = corrector.trigram_path_probability(tokens)
         self.assertAlmostEqual(tpp, -4.185007, msg=tpp)
 
+    def test_pos_trigram_path_probability(self):
+
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
+        pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/pos_trigram_model_0K.arpa')
+        pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
+        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+
+        tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
+
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=1.0, pos_tmpipe_obj=pos_tmpipe_obj)
+        ptpp = corrector.pos_trigram_path_probability(tagged_tokens)
+        self.assertAlmostEqual(ptpp, -0.230294, msg=repr(ptpp))
+
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_tmpipe_obj=pos_tmpipe_obj)
+        ptpp = corrector.pos_trigram_path_probability(tagged_tokens)
+        self.assertAlmostEqual(ptpp, -0.7838715, msg=repr(ptpp))
+
     def test_get_correction(self):
         '''
         This is a regression test and a test of pieces working
