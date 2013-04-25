@@ -2,7 +2,7 @@
 # test_VariationProposer.py
 
 from code.correction import VariationProposer
-from collections import defaultdict
+from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest
 
@@ -16,8 +16,8 @@ tag_dictionary["VBG"] = {'loving':40}
 tag_dictionary['TO'] = {'to':40}
 tag_dictionary['MD'] = {'might':40, 'could':40}
 
-insertables = ['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need']
-deletables = ['with', 'a', 'the', 'water']
+insertables = Counter(['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need'])
+deletables = Counter(['with', 'a', 'the', 'water'])
 
 l_vars = ['laboured', 'labyrinths', 'laden', 'lamp', 'like', 'love', 'lover', 'loves', 'loving']
 
