@@ -114,9 +114,6 @@ def get_pos_data(target, source, env):
 
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
 
-    closed_class_tags = ['IN', 'DT', 'TO', 'MD']
-    AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
-
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     pos_training_file_obj = open_with_unicode(target[1].path, None, 'w')
     closed_class_pos_training_file_obj = open_with_unicode(target[2].path, None, 'w')
@@ -234,6 +231,8 @@ def score_corrections(target, source, env):
 
 # Hard coding this for now... TODO make variables
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
+closed_class_tags = ['IN', 'DT', 'TO', 'MD']
+AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 
 # Get commandline configuration:
 
