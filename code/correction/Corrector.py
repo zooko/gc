@@ -96,7 +96,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
 
 class Corrector():
 
-    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, pos_tmpipe_obj=None):
+    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, pos_tmpipe_obj=None, closed_class=0, closed_class_tmpipe=None, closed_class_tags=None, AUX=None):
 
         self.trigram_model_pipe = trigram_model_pipe
         self.width = width
@@ -105,6 +105,10 @@ class Corrector():
         self.verbose = verbose
         self.pos = pos
         self.pos_tmpipe_obj = pos_tmpipe_obj
+        self.closed_class = closed_class
+        self.closed_class_pos_tmpipe_obj = closed_class_tmpipe
+        self.closed_class_tags = closed_class_tags
+        self.AUX = AUX
 
     def get_error_prob(self):
        return self.error_prob
@@ -127,6 +131,10 @@ class Corrector():
            return self.trigram_model_pipe.trigram_probability([word1, word2, word3])
        elif pipe == 'p':
            return self.pos_tmpipe_obj.trigram_probability([word1, word2, word3])
+       elif pipe == 'c':
+           return self.closed_class_pos_tmpipe_obj.trigram_probability([word1, word2, word3])
+       else:
+           assert False, "pipe must be one of 't', 'p', or 'c'"
 
 
     def pos_trigram_path_probability(self, path):
@@ -141,7 +149,24 @@ class Corrector():
 
         return self.pos * pos_prob + (1-self.pos) * self.trigram_path_probability([p[0] for p in path])
 
+    def closed_class_pos_trigram_path_probability(self, path):
+
+        if self.closed_class:
+            closed_class_path = [p[0].lower() if (p[1] in self.closed_class_tags or p[0] in self.AUX) else p[1] for p in path]
+            closed_class_prob = self.trigram_path_probability(closed_class_path, pipe='c', lower=False)
+        else:
+            closed_class_prob = 0
+
+        if self.closed_class == 1:
+            return closed_class_prob
+
+        return self.closed_class * closed_class_prob + (1-self.closed_class) * self.trigram_path_probability([p[0] for p in path])
+
     def get_correction(self, tokens):
+
+        if self.closed_class:
+            assert not self.pos, "POS and closed class models can't both be set."
+            return beam_search(tokens, self.width, self.get_error_prob, self.closed_class_pos_trigram_path_probability, self.variation_generator, self.verbose)
 
         return beam_search(tokens, self.width, self.get_error_prob, self.pos_trigram_path_probability, self.variation_generator, self.verbose)
 

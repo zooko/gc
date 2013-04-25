@@ -29,6 +29,8 @@ def path_probability_function(tagged_tokens):
 stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
 model_path = 'stanford-tagger/english-left3words-distsim.tagger'
+closed_class_tags = ['IN', 'DT', 'TO', 'MD']
+AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 
 class CorrectorTest(unittest.TestCase):
 
@@ -80,6 +82,25 @@ class CorrectorTest(unittest.TestCase):
         ptpp = corrector.pos_trigram_path_probability(tagged_tokens)
         self.assertAlmostEqual(ptpp, -0.7838715, msg=repr(ptpp))
 
+    def test_closed_class_pos_trigram_path_probability(self):
+
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
+        closed_class_pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/closed_class_pos_trigram_model.arpa')
+        pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
+        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+
+        tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
+
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=1.0, closed_class_tmpipe=closed_class_pos_tmpipe_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+        ptpp = corrector.closed_class_pos_trigram_path_probability(tagged_tokens)
+        self.assertAlmostEqual(ptpp, -0.094828, msg=repr(ptpp))
+
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_tmpipe=closed_class_pos_tmpipe_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+        ptpp = corrector.closed_class_pos_trigram_path_probability(tagged_tokens)
+        self.assertAlmostEqual(ptpp, -0.7161385, msg=repr(ptpp))
+
     def test_get_correction(self):
         '''
         This is a regression test and a test of pieces working
@@ -114,6 +135,21 @@ class CorrectorTest(unittest.TestCase):
         tagged_sentence = [('I', 'PRP'), ('agree', 'VBP'), ('to', 'TO'), ('a', 'DT'), ('large', 'JJ'), ('extent', 'NN'), ('that', 'IN'), ('current', 'JJ'), ('policies', 'NNS'), ('have', 'VBP'), ('helped', 'VBN'), ('to', 'TO'), ('ease', 'VB'), ('the', 'DT'), ('aging', 'NN'), ('process', 'NN'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
         self.assertListEqual(result, [('I', 'PRP'), ('agree', 'VBP'), ('to', 'TO'), ('a', 'DT'), ('large', 'JJ'), ('extent', 'NN'), ('that', 'IN'), ('current', 'JJ'), ('policies', 'NNS'), ('have', 'VBP'), ('helped', 'VBN'), ('to', 'TO'), ('ease', 'VB'), ('the', 'DT'), ('aging', 'NN'), ('process', 'NN'), ('.', '.')], result)
+
+    def test_closed_class_pos_correction(self):
+
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
+        closed_class_pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/closed_class_pos_trigram_model.arpa')
+        pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
+        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
+        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_tmpipe=closed_class_pos_tmpipe_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+
+        tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
+        result = corrector.get_correction(tagged_sentence)
+        self.assertListEqual(result, [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')], result)
+
 
 
 if __name__ == '__main__':
