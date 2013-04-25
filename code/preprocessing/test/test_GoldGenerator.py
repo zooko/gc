@@ -2,6 +2,7 @@
 # test_GoldGenerator.py
 
 from code.preprocessing import GoldGenerator
+from collections import Counter
 import unittest, StringIO, json
 
 class GoldTest(unittest.TestCase):
@@ -10,44 +11,44 @@ class GoldTest(unittest.TestCase):
 
         sentence = "S Our current population is 6 billion people and it is still growing exponentially .\n"
         corrections = []
-        insertables = set([])
-        deletables = set([])
+        insertables = Counter()
+        deletables = Counter()
         corrected = GoldGenerator.correct_sentence_and_collect_insertables_and_deletables(sentence, corrections, insertables, deletables)
         self.assertEqual(corrected, "Our current population is 6 billion people and it is still growing exponentially .\n", corrected)
-        self.assertSetEqual(insertables, set([]), insertables)
-        self.assertSetEqual(deletables, set([]), deletables)
+        self.assertDictEqual(insertables, Counter(), insertables)
+        self.assertDictEqual(deletables, Counter(), deletables)
 
         sentence = "S This will , if not already , caused problems as there are very limited spaces for us .\n"
-        insertables = set([])
-        deletables = set([])
+        insertables = Counter()
+        deletables = Counter()
         corrections = ["A 7 8|||Vform|||cause|||REQUIRED|||-NONE-|||0", 
                        "A 14 15|||Nn|||space|||REQUIRED|||-NONE-|||0",
                        "A 11 12|||SVA|||is|||REQUIRED|||-NONE-|||0"]
         corrected = GoldGenerator.correct_sentence_and_collect_insertables_and_deletables(sentence, corrections, insertables, deletables)
         self.assertEqual(corrected, "This will , if not already , cause problems as there is very limited space for us .\n", corrected)
-        self.assertSetEqual(insertables, set([]), insertables)
-        self.assertSetEqual(deletables, set([]), deletables)
+        self.assertDictEqual(insertables, Counter(), insertables)
+        self.assertDictEqual(deletables, Counter(), deletables)
 
         sentence = "S It is also important to create a better material that can support the buildings despite any natural disaster like earthquakes .\n"
-        insertables = set([])
-        deletables = set([])
+        insertables = Counter()
+        deletables = Counter()
         corrections = ["A 6 7|||ArtOrDet||||||REQUIRED|||-NONE-|||0",
                        "A 12 13|||ArtOrDet||||||REQUIRED|||-NONE-|||0",
                        "A 17 18|||Nn|||disasters|||REQUIRED|||-NONE-|||0"]
         corrected = GoldGenerator.correct_sentence_and_collect_insertables_and_deletables(sentence, corrections, insertables, deletables)
         self.assertEqual(corrected, "It is also important to create better material that can support buildings despite any natural disasters like earthquakes .\n", corrected)
-        self.assertSetEqual(insertables, set([]), insertables)
-        self.assertSetEqual(deletables, set(['the', 'a']), deletables)
+        self.assertDictEqual(insertables, Counter(), insertables)
+        self.assertDictEqual(deletables, Counter({'the':1, 'a':1}), deletables)
 
         sentence = "S In this era , Engineering designs can help to provide more habitable accommodation by designing a stronger material so it 's possible to create a taller and safer building , a better and efficient sanitation system to prevent disease , and also by designing a way to change the condition of the inhabitable environment ."
-        insertables = set([])
-        deletables = set([])
+        insertables = Counter()
+        deletables = Counter()
         corrections = ["A 15 16|||ArtOrDet||||||REQUIRED|||-NONE-|||0",
                        "A 24 29|||ArtOrDet|||taller and safer buildings|||REQUIRED|||-NONE-|||0"]
         corrected = GoldGenerator.correct_sentence_and_collect_insertables_and_deletables(sentence, corrections, insertables, deletables)
         self.assertEqual(corrected, "In this era , Engineering designs can help to provide more habitable accommodation by designing stronger material so it 's possible to create taller and safer buildings , a better and efficient sanitation system to prevent disease , and also by designing a way to change the condition of the inhabitable environment .\n", corrected)
-        self.assertSetEqual(insertables, set([]), insertables)
-        self.assertSetEqual(deletables, set(['a', 'building']), deletables)
+        self.assertDictEqual(insertables, Counter(), insertables)
+        self.assertDictEqual(deletables, Counter({'a':2, 'building':1}), deletables)
         
 
 
@@ -92,8 +93,8 @@ class GoldTest(unittest.TestCase):
 
         self.assertEqual(output_file_obj.getvalue(), expected_output, output_file_obj.getvalue())
 
-        self.assertSetEqual(set(json.loads(ins_file_obj.getvalue())), set(['a', 'the', 'testing', 'an']))
-        self.assertSetEqual(set(json.loads(del_file_obj.getvalue())), set(['of', 'the']))
+        self.assertDictEqual(Counter(json.loads(ins_file_obj.getvalue())), Counter(['a', 'the', 'testing', 'an']))
+        self.assertDictEqual(Counter(json.loads(del_file_obj.getvalue())), Counter(['of', 'the']))
 
 if __name__ == '__main__':
     unittest.main()
