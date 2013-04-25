@@ -128,9 +128,9 @@ def get_pos_data(target, source, env):
         for w, t in words_and_tags:
             pos_training_file_obj.write(t + u' ')
             if t in closed_class_tags or w.lower() in AUX:
-                closed_class_pos_training_file_obj.write(t + u' ')
-            else:
                 closed_class_pos_training_file_obj.write(w.lower() + u' ')
+            else:
+                closed_class_pos_training_file_obj.write(t + u' ')
             if not pos_dictionary_set.has_key(t):
                 pos_dictionary_set[t] = Counter()
             pos_dictionary_set[t][w.lower()] += 1
