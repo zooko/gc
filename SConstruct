@@ -47,7 +47,7 @@ def randomise_essays(target, source, env):
     devel_conll_file_obj = open_with_unicode(target[3].path, None, 'w')
     devel_m2_file_obj = open_with_unicode(target[4].path, None, 'w')
     devel_m2_5_file_obj = open_with_unicode(target[5].path, None, 'w')
-    rand_obj = random.Random(7)
+    rand_obj = random.Random(seed)
     er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj)
     er.randomise()
     return None
@@ -246,6 +246,11 @@ try:
 except:
     print "Usage: scons data_directory=DIR variables target"
     raise Exception
+
+try:
+    seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
+except:
+    seed = 7
 
 try:
     error_probability = float([x[1] for x in ARGLIST if x[0] == 'error_probability'][0])
