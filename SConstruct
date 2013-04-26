@@ -6,11 +6,13 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, json
+import os
+
+import codecs, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
-from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe, POSFiller
+from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter
 from code.correction import VariationProposer, Corrector
 
@@ -150,15 +152,15 @@ def get_pos_data(target, source, env):
 
 def make_pos_trigram_models(target, source, env):
 
-    srilm_make_pos_lm = subprocess.Popen(['ngram-count', '-kndiscount3', '-text', source[0].path, '-lm', target[0].path])
-    srilm_make_closed_class_pos_lm = subprocess.Popen(['ngram-count', '-kndiscount3', 'unk', '-text', source[1].path, '-lm', target[1].path])
+    subprocess.Popen(['ngram-count', '-kndiscount3', '-text', source[0].path, '-lm', target[0].path])
+    subprocess.Popen(['ngram-count', '-kndiscount3', 'unk', '-text', source[1].path, '-lm', target[1].path])
 
     return None
 
 def correct(target, source, env):
-    # return statprof_correct(target, source, env)
-    # return cProfile_correct(target, source, env)
     return real_correct(target, source, env)
+    # return statprof_correct(target, source, env)
+    #return cProfile_correct(target, source, env)
 
 def cProfile_correct(target, source, env):
     import cProfile
@@ -220,15 +222,148 @@ def real_correct(target, source, env):
 
     return None
 
+### begin copied in from the NUS M2 scorer "m2scorer.py" so that we could change it into a Python object instead of an operating system subprocess
+from util import paragraphs
+
+from levenshtein import edit_graph, set_weights, best_edit_seq_bf, levenshtein_matrix, transitive_arcs, equals_ignore_whitespace_casing, matchSeq, comp_p, comp_r, comp_f1
+
+def batch_pre_rec_f1_ufo(output_ufo, candidates, sources, gold_edits, max_unchanged_words=2, ignore_whitespace_casing= False, verbose=False, very_verbose=False):
+    assert len(candidates) == len(sources) == len(gold_edits), (len(candidates),  len(sources),  len(gold_edits))
+    stat_correct = 0.0
+    stat_proposed = 0.0
+    stat_gold = 0.0
+    for candidate, source, gold in zip(candidates, sources, gold_edits):
+        candidate_tok = candidate.split()
+        source_tok = source.split()
+        lmatrix, backpointers = levenshtein_matrix(source_tok, candidate_tok)
+        V, E, dist, edits = edit_graph(lmatrix, backpointers)
+        if very_verbose:
+            output_ufo.write(u"edit matrix: %s\n" % lmatrix)
+            output_ufo.write(u"backpointers: %s\n" % backpointers)
+            output_ufo.write(u"edits (w/o transitive arcs): %s\n" % edits)
+        V, E, dist, edits = transitive_arcs(V, E, dist, edits, max_unchanged_words, very_verbose)
+        dist = set_weights(E, dist, edits, gold, very_verbose)
+        editSeq = best_edit_seq_bf(V, E, dist, edits, very_verbose)
+        if very_verbose:
+            output_ufo.write(u"Graph(V,E) =\n")
+            output_ufo.write(u"V = %s\n" % V)
+            output_ufo.write(u"E = %s\n" % E)
+            output_ufo.write(u"edits (with transitive arcs): %s\n" % edits)
+            output_ufo.write(u"dist() = %s\n" % dist)
+            output_ufo.write(u"viterbi path = %s\n" % editSeq)
+        if ignore_whitespace_casing:
+            editSeq = filter(lambda x : not equals_ignore_whitespace_casing(x[2], x[3]), editSeq)
+        correct = matchSeq(editSeq, gold, ignore_whitespace_casing)
+        stat_correct += len(correct)
+        stat_proposed += len(editSeq)
+        stat_gold += len(gold)
+        if verbose:
+            output_ufo.write(u"SOURCE        : %s\n" % source)
+            output_ufo.write(u"HYPOTHESIS    : %s\n" % candidate)
+            output_ufo.write(u"EDIT SEQ      : %s\n" % editSeq)
+            output_ufo.write(u"GOLD EDITS    : %s\n" % gold)
+            output_ufo.write(u"CORRECT EDITS : %s\n" % correct)
+            output_ufo.write(u"# correct     : %s\n" % stat_correct)
+            output_ufo.write(u"# proposed    : %s\n" % stat_proposed)
+            output_ufo.write(u"# gold        : %s\n" % stat_gold)
+            output_ufo.write(u"precision     : %s\n" % comp_p(stat_correct, stat_proposed))
+            output_ufo.write(u"recall        : %s\n" % comp_r(stat_correct, stat_gold))
+            output_ufo.write(u"f1            : %s\n" % comp_f1(stat_correct, stat_proposed, stat_gold))
+            output_ufo.write(u"-------------------------------------------\n")
+
+    try:
+        p  = stat_correct / stat_proposed
+    except ZeroDivisionError:
+        p = 1.0
+
+    try:
+        r  = stat_correct / stat_gold
+    except ZeroDivisionError:
+        r = 1.0
+    try:
+        f1  = 2.0 * p * r / (p+r)
+    except ZeroDivisionError:
+        f1 = 0.0
+    if verbose:
+        output_ufo.write(u"CORRECT EDITS  : %s\n" % stat_correct)
+        output_ufo.write(u"PROPOSED EDITS : %s\n" % stat_proposed)
+        output_ufo.write(u"GOLD EDITS     : %s\n" % stat_gold)
+        output_ufo.write(u"P = %s\n" % p)
+        output_ufo.write(u"R = %s\n" % r)
+        output_ufo.write(u"F1 = %s\n" % f1)
+    return (p, r, f1)
+
+class M2Scorer:
+    def __init__(self, gold_ufo, verbose=False, max_unchanged_words=2, ignore_whitespace_casing=False, very_verbose=False):
+        self.verbose = verbose
+        self.max_unchanged_words = max_unchanged_words
+        self.ignore_whitespace_casing = ignore_whitespace_casing
+        self.very_verbose = very_verbose 
+
+        self.source_sentences = []
+        self.gold_edits = []
+
+        self._load_annotation(gold_ufo)
+
+    def _load_annotation(self, gold_ufo):
+        for item in paragraphs(gold_ufo):
+            item = item.splitlines(False)
+            sentence = [line[2:].strip() for line in item if line.startswith('S ')]
+            assert sentence != []
+            annotation = []
+            for line in item[1:]:
+                if line.startswith('I ') or line.startswith('S '):
+                    continue
+                assert line.startswith('A ')
+                line = line[2:]
+
+                fields = line.split('|||')
+                start_offset = int(fields[0].split()[0])
+                end_offset = int(fields[0].split()[1])
+                corrections =  [c.strip() if c != '-NONE-' else '' for c in fields[2].split('||')]
+                # NOTE: start and end are *token* offsets
+                original = ' '.join(' '.join(sentence).split()[start_offset:end_offset])
+                annotation.append((start_offset, end_offset, original, corrections))
+            tok_offset = 0
+            for this_sentence in sentence:
+                tok_offset += len(this_sentence.split())
+                this_edits = [edit for edit in annotation if edit[0] <= tok_offset and edit[1] <= tok_offset]
+                self.source_sentences.append(this_sentence)
+                self.gold_edits.append(this_edits)
+
+    def score(self, system_ufo, output_ufo):
+        system_sentences = [line.strip() for line in system_ufo]
+
+        p, r, f1 = batch_pre_rec_f1_ufo(output_ufo, system_sentences, self.source_sentences, self.gold_edits, self.max_unchanged_words, self.ignore_whitespace_casing, self.verbose, self.very_verbose)
+
+        output_ufo.write(u"Precision   : %.4f\n" % p)
+        output_ufo.write(u"Recall      : %.4f\n" % r)
+        output_ufo.write(u"F1          : %.4f\n" % f1)
+### end copied in from the NUS M2 scorer "m2scorer.py" so that we could change it into a Python object instead of an operating system subprocess
+
 def score_corrections(target, source, env):
+    return pythonic_score_corrections(target, source, env)
+    # return subprocess_score_corrections(target, source, env)
+
+def pythonic_score_corrections(target, source, env):
+    gold_fname = os.path.join(data_directory, 'development_set_m2_5')
+
+    scorer = M2Scorer(open_with_unicode(gold_fname, None, 'r'), verbose=True, max_unchanged_words=7)
 
     for i in range(len(vocabulary_sizes)):
         print source[i].path
-        scorer = subprocess.Popen(['python', data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=-1)
-        scorer.wait()
+        res_ufo = open_with_unicode(source[i].path, None, 'r')
         score_file_obj = open_with_unicode(target[i].path, None, 'w')
-        for line in scorer.stdout.readlines():
-            score_file_obj.write(line)
+        scorer.score(res_ufo, score_file_obj)
+
+def subprocess_score_corrections(target, source, env):
+
+    for i in range(len(vocabulary_sizes)):
+        score_file_obj = open_with_unicode(target[i].path, None, 'w')
+
+        print source[i].path
+        scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
+        scorer.communicate(None)
 
     return None
 
