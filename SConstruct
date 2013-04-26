@@ -76,7 +76,7 @@ def create_vocabularies(target, source, env):
         unigram_counts_file_obj = open_with_unicode(data_directory + 'counts', None, 'r')
         size = vocabulary_sizes[0]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        assert target[0].path == vocabulary_file_name, 'Target was: ' + target[0].path + '; Expected: ' + vocabulary_file_name
+        assert os.path.normpath(target[0].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[0].path + '; Expected: ' + vocabulary_file_name
         vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
         cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         cutter.cut_vocabulary(int(float(size)*1000))
@@ -101,7 +101,7 @@ def create_trigram_models(target, source, env):
         size = vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
         trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
-        assert target[i].path == trigram_model_name, target[i].path
+        assert os.path.normpath(target[i].path) == os.path.normpath(trigram_model_name), target[i].path
         srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', train_gold_file_name, '-lm', trigram_model_name])
         srilm_make_lm.wait()
 
@@ -156,9 +156,9 @@ def make_pos_trigram_models(target, source, env):
     return None
 
 def correct(target, source, env):
-    return real_correct(target, source, env)
-    #return statprof_correct(target, source, env)
+    # return statprof_correct(target, source, env)
     # return cProfile_correct(target, source, env)
+    return real_correct(target, source, env)
 
 def cProfile_correct(target, source, env):
     import cProfile
