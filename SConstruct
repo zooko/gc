@@ -185,17 +185,21 @@ def real_correct(target, source, env):
     insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
     pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[4].path)
+    closed_class_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[5].path)
 
     variation_proposers = []
     correctors = []
     corrections_file_objs = []
     tmpipe_objs = []
     for i in range(len(vocabulary_sizes)):
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+5].path)
+        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
         tmpipe_objs.append(tmpipe_obj)
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, insertables, deletables)
         variation_proposers.append(var_gen)
-        correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_tmpipe_obj=pos_tmpipe_obj))
+        if pos_weight:
+            correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_tmpipe_obj=pos_tmpipe_obj))
+        else:
+            correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_tmpipe=closed_class_tmpipe_obj, closed_class_tags=closed_class_tags, AUX=AUX))
         corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
     tagged_tokens = []
@@ -266,6 +270,11 @@ try:
 except:
     pos_weight = 0
 
+try:
+    closed_class_weight = float([x[1] for x in ARGLIST if x[0] == 'closed_class_weight'][0])
+except:
+    closed_class_weight = 0
+
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
     vocabulary_sizes = [0.1, 0.5]
@@ -274,6 +283,8 @@ else:
     for key, value in ARGLIST:
         if key == "vocabulary_size":
             vocabulary_sizes.append(value)
+
+assert not (pos_weight and closed_class_weight), "Choose either pos_weight or closed_class_weight."
 
 learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
@@ -310,10 +321,10 @@ env.pos_trigram_models([data_directory + 'pos_trigram_model.arpa', data_director
 
 env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model.arpa', data_directory + 'closed_class_pos_trigram_model.arpa'])
 
-env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_trigram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_trigram_model.arpa', data_directory + 'closed_class_pos_trigram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
-env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) for size in vocabulary_sizes])
+env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) for size in vocabulary_sizes])
 
-env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) for size in vocabulary_sizes])
+env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes])
 
-env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) for size in vocabulary_sizes])
+env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes])
