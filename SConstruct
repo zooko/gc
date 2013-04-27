@@ -152,8 +152,8 @@ def get_pos_data(target, source, env):
 
 def make_pos_trigram_models(target, source, env):
 
-    subprocess.Popen(['ngram-count', '-kndiscount3', '-text', source[0].path, '-lm', target[0].path])
-    subprocess.Popen(['ngram-count', '-kndiscount3', 'unk', '-text', source[1].path, '-lm', target[1].path])
+    subprocess.Popen(['ngram-count', '-kndiscount3', '-unk', '-text', source[0].path, '-lm', target[0].path])
+    subprocess.Popen(['ngram-count', '-kndiscount3', '-unk', '-text', source[1].path, '-lm', target[1].path])
 
     return None
 
