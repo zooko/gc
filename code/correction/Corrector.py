@@ -154,13 +154,20 @@ class Corrector():
         if self.closed_class:
             closed_class_path = [p[0].lower() if (p[1] in self.closed_class_tags or p[0] in self.AUX) else p[1] for p in path]
             closed_class_prob = self.trigram_path_probability(closed_class_path, pipe='c', lower=False)
+            assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s -- closed_class_path: %s" % (closed_class_prob, type(closed_class_prob), closed_class_path)
         else:
             closed_class_prob = 0
 
         if self.closed_class == 1:
             return closed_class_prob
 
-        return self.closed_class * closed_class_prob + (1-self.closed_class) * self.trigram_path_probability([p[0] for p in path])
+        assert isinstance(self.closed_class, (int, float, long)), "%r :: %s" % (self.closed_class, type(self.closed_class))
+        assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s" % (closed_class_prob, type(closed_class_prob))
+
+        x = self.trigram_path_probability([p[0] for p in path])
+        assert isinstance(x, (int, float, long)), "%r :: %s" % (x, type(x))
+
+        return self.closed_class * closed_class_prob + (1-self.closed_class) * x
 
     def get_correction(self, tokens):
 
