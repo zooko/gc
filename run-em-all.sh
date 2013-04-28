@@ -19,7 +19,12 @@ echo "Hello in there, WIDTH is " $WIDTH
 export WIDTH
 # export POSWEIGHT
 
-mkdir -p archive
+TS=`date +"%F_%T%:::z"`
+echo TS is ${TS}
+DNAME=tagtests-${TS}
+mkdir ${DNAME}
+cd ${DNAME}
+cp ../run-em-all.sh .
 
 # for SEED in 1 2 3 4 5 6 7 ; do
 for SEED in 5 ; do
