@@ -55,9 +55,7 @@ class CorrectorTest(unittest.TestCase):
 
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 25, var_gen.generate_path_variations, -1.3)
 
         tokens = u'The I over'.split()
@@ -69,9 +67,7 @@ class CorrectorTest(unittest.TestCase):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('7878', 'code/correction/test/pos_trigram_model_0K.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
 
         tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
 
@@ -88,9 +84,7 @@ class CorrectorTest(unittest.TestCase):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('1234', 'code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
 
         tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
 
@@ -110,9 +104,7 @@ class CorrectorTest(unittest.TestCase):
 
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3)
 
         tagged_sentence = [('I', 'PRP'), ('agree', 'VBP'), ('to', 'TO'), ('a', 'DT'), ('large', 'JJ'),('extent', 'NN'), ('that', 'IN'), ('current', 'JJ'), ('policies', 'NNS'), ('have', 'VBP'), ('helped', 'VBN'), ('to', 'TO'), ('ease', 'VB'), ('the', 'DT'), ('aging', 'NN'), ('process', 'NN'), ('.', '.')]
@@ -124,9 +116,7 @@ class CorrectorTest(unittest.TestCase):
         pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8488', 'code/correction/test/pos_5-gram.arpa', '5')
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
@@ -142,8 +132,6 @@ class CorrectorTest(unittest.TestCase):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('5888', 'code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
-        small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
 
