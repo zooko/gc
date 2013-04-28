@@ -63,7 +63,7 @@ class VariationProposer():
         if (token, tag) in self.closed_class_deletables:
             alternatives.append(())
 
-        return set(alternatives)
+        return sorted(set(alternatives))
 
     def open_class_alternatives(self, token, tag):
         
@@ -79,31 +79,30 @@ class VariationProposer():
 
         relevant_tag_prefix_tokens_with_tag = set([])
         if tag_type == 'VB':
-            keys = [k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag]
+            keys = sorted([k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag])
         else:
             assert tag_type == 'NN', tag_type
-            if tag == 'NNS' and 'NN' in self.tag_dictionary.keys():
+            if tag == 'NNS' and 'NN' in self.tag_dictionary:
                 keys = ['NN']
-            elif tag == 'NN' and 'NNS' in self.tag_dictionary.keys():
+            elif tag == 'NN' and 'NNS' in self.tag_dictionary:
                 keys = ['NNS']
-            elif tag == 'NNPS' and 'NNP' in self.tag_dictionary.keys():
+            elif tag == 'NNPS' and 'NNP' in self.tag_dictionary:
                 keys = ['NNP']
-            elif tag == 'NNP' and 'NNPS' in self.tag_dictionary.keys():
+            elif tag == 'NNP' and 'NNPS' in self.tag_dictionary:
                 keys = ['NNPS']
             else:
                 assert False, tag
 
         for pt in prefix_tokens:
             for k in keys:
-                if pt in self.tag_dictionary[k]:
+                if pt in sorted(self.tag_dictionary[k]):
                     relevant_tag_prefix_tokens_with_tag.add((pt, k))
                     break
         if (token, tag) in relevant_tag_prefix_tokens_with_tag:
             relevant_tag_prefix_tokens_with_tag.remove((token, tag))
-        return relevant_tag_prefix_tokens_with_tag
+        return sorted(relevant_tag_prefix_tokens_with_tag)
 
     def get_alternatives(self, token, tag):
-
         if self.cache.has_key( (token, tag) ):
             self.cache_stats[0] += 1
             alternatives = self.cache[(token, tag)]
