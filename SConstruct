@@ -17,7 +17,7 @@ from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
 from code.preprocessing import EssayRandomiser, GoldGenerator
-from code.language_modelling import VocabularyCutter
+from code.language_modelling import VocabularyCutter, SRILMServerPipe
 from code.correction import VariationProposer, Corrector
 
 def open_with_unicode(file_name, compression_type, mode):
@@ -130,7 +130,7 @@ def create_trigram_models(target, source, env):
 
 def get_pos_data(target, source, env):
     '''
-    Creates pos_dictionary, POS training sets, pos_trigram_model.arpa, closed_class_pos_trigram_model.arpa
+    Creates pos_dictionary, POS training sets, pos_ngram_model.arpa, closed_class_pos_ngram_model.arpa
     '''
 
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
@@ -172,13 +172,13 @@ def get_pos_data(target, source, env):
 
         return None
 
-def make_pos_trigram_models(target, source, env):
+def make_pos_ngram_models(target, source, env):
 
     # pos_trigram_model.arpa, from pos_training_set
-    subprocess.Popen(['ngram-count', '-kndiscount3', '-unk', '-text', source[0].path, '-lm', target[0].path])
+    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
 
     # closed_class_pos_trigram_model.arpa, from closed_class_pos_training_set
-    subprocess.Popen(['ngram-count', '-kndiscount3', '-unk', '-text', source[1].path, '-lm', target[1].path])
+    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
 
     return None
 
@@ -211,14 +211,13 @@ def real_correct(target, source, env):
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
     insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
-    pos_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[4].path)
-    closed_class_tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[5].path)
+    pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8989', source[4].path, '5')
+    closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('9898', source[5].path, '5')
 
     variation_proposers = []
     correctors = []
     corrections_file_objs = []
     tmpipe_objs = []
-
     try:
         for i in range(len(vocabulary_sizes)):
             tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
@@ -226,9 +225,9 @@ def real_correct(target, source, env):
             var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, insertables, deletables)
             variation_proposers.append(var_gen)
             if pos_weight:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_tmpipe_obj=pos_tmpipe_obj))
+                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
             else:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_tmpipe=closed_class_tmpipe_obj, closed_class_tags=closed_class_tags, AUX=AUX))
+                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
             corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
         tagged_tokens = []
@@ -453,11 +452,11 @@ training_gold_builder = Builder(action = training_m2_5_to_gold)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
-pos_trigram_model_builder = Builder(action = make_pos_trigram_models)
+pos_ngram_model_builder = Builder(action = make_pos_ngram_models)
 corrections_builder = Builder(action = correct)
 scores_builder = Builder(action = score_corrections)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_trigram_models' : pos_trigram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -479,11 +478,11 @@ env.pos_data([data_directory + target for target in ["pos_dictionary", "pos_trai
 
 env.Alias("pos_data", [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']])
 
-env.pos_trigram_models([data_directory + 'pos_trigram_model.arpa', data_directory + 'closed_class_pos_trigram_model.arpa'], [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
+env.pos_ngram_models([data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'], [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
 
-env.Alias('pos_trigram_models', [data_directory + 'pos_trigram_model.arpa', data_directory + 'closed_class_pos_trigram_model.arpa'])
+env.Alias('pos_ngram_models', [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'])
 
-env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_trigram_model.arpa', data_directory + 'closed_class_pos_trigram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
 env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) for size in vocabulary_sizes])
 
