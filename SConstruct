@@ -8,13 +8,15 @@ del sys.modules['pickle']
 
 import os
 
+import nltk
+
 from contextlib import nested
 
 import codecs, contextlib, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
-from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
+from code.preprocessing import EssayRandomiser, GoldGenerator
 from code.language_modelling import VocabularyCutter
 from code.correction import VariationProposer, Corrector
 
@@ -131,8 +133,6 @@ def get_pos_data(target, source, env):
     Creates pos_dictionary, POS training sets, pos_trigram_model.arpa, closed_class_pos_trigram_model.arpa
     '''
 
-    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
-
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
     with nested(
         open_with_unicode(target[1].path, None, 'w'), 
@@ -148,7 +148,7 @@ def get_pos_data(target, source, env):
         for line in train_gold_file_obj:
             if not line_number % 100:
                 print '.',
-            words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
+            words_and_tags = nltk.pos_tag(line.strip().split(' '))
             for w, t in words_and_tags:
                 pos_training_file_obj.write(t + u' ')
                 if t in closed_class_tags or w.lower() in AUX:
@@ -397,7 +397,6 @@ def subprocess_score_corrections(target, source, env):
 
 
 # Hard coding this for now... TODO make variables
-module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
 closed_class_tags = ['IN', 'DT', 'TO', 'MD']
 AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 
