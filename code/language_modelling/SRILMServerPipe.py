@@ -6,9 +6,9 @@ import os, subprocess, codecs, time, telnetlib
 class SRILMServerPipe:
     def __init__(self, port_number, model_path, order, unk=True):
         if unk:
-            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=open('logging' + str(time.time()), 'w'))
+            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=-1)
         else:
-            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'], stderr=open('logging' + str(time.time()), 'w'))
+            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'], stderr=-1)
         time.sleep(3)
 
         self.srilm_server_pipe = telnetlib.Telnet('localhost', port_number)
