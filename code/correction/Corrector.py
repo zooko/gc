@@ -96,7 +96,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
 
 class Corrector():
 
-    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, pos_tmpipe_obj=None, closed_class=0, closed_class_tmpipe=None, closed_class_tags=None, AUX=None):
+    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, pos_ngram_server_obj=None, closed_class=0, closed_class_pos_ngram_server_obj=None, closed_class_tags=None, AUX=None):
 
         self.trigram_model_pipe = trigram_model_pipe
         self.width = width
@@ -104,56 +104,83 @@ class Corrector():
         self.error_prob = error_prob
         self.verbose = verbose
         self.pos = pos
-        self.pos_tmpipe_obj = pos_tmpipe_obj
+        self.pos_ngram_server_obj = pos_ngram_server_obj
         self.closed_class = closed_class
-        self.closed_class_pos_tmpipe_obj = closed_class_tmpipe
+        self.closed_class_pos_ngram_server_obj = closed_class_pos_ngram_server_obj
         self.closed_class_tags = closed_class_tags
         self.AUX = AUX
 
     def get_error_prob(self):
        return self.error_prob
 
-    def trigram_path_probability(self, path, pipe='t', lower=True):
+    def ngram_path_probability(self, path, pipe='t'):
        '''
        path is a list of tuples with at least one element.
+       pipe can be 't' for trigram, 'p' for pos, or 'c' for closed_class
        '''
 
-       if lower:
-           tokens = ['<s>', '<s>'] + [w.lower() for w in path[-3:]]
-       else:
-           tokens = ['<s>', '<s>'] + [w for w in path[-3:]]
-       word1, word2, word3 = tokens[-3:]
-
-       if self.verbose:
-           print "Submitting to trigram model:", word1, word2, word3
-
        if pipe == 't':
-           return self.trigram_model_pipe.trigram_probability([word1, word2, word3])
+           tokens = ['<s>', '<s>'] + [w.lower() for w in path[-3:]]
+           word1, word2, word3 = tokens[-3:]
+
+           if self.verbose:
+               print "Submitting to trigram model:", word1, word2, word3
+
+           result = self.trigram_model_pipe.trigram_probability([word1, word2, word3])
+
+           if self.verbose:
+               print "And got:", result
+
+           return result
+
        elif pipe == 'p':
-           return self.pos_tmpipe_obj.trigram_probability([word1, word2, word3])
+           tokens = 4*['<s>'] + [w for w in path[-5:]]
+           word1, word2, word3, word4, word5 = tokens[-5:]
+
+           if self.verbose:
+               print "Submitting to ngram model:", word1, word2, word3, word4, word5
+
+           result = self.pos_ngram_server_obj.log_probability([word1, word2, word3, word4, word5])
+           if self.verbose:
+               print "And got:", result
+
+           return result
+
        elif pipe == 'c':
-           return self.closed_class_pos_tmpipe_obj.trigram_probability([word1, word2, word3])
+           tokens = 4*['<s>'] + [w for w in path[-5:]]
+           word1, word2, word3, word4, word5 = tokens[-5:]
+
+           if self.verbose:
+               print "Submitting to ngram model:", word1, word2, word3, word4, word5
+
+           result = self.closed_class_pos_ngram_server_obj.log_probability([word1, word2, word3, word4, word5])
+
+           if self.verbose:
+               print "And got:", result
+
+           return result
+
        else:
            assert False, "pipe must be one of 't', 'p', or 'c'"
 
 
-    def pos_trigram_path_probability(self, path):
+    def pos_ngram_path_probability(self, path):
 
         if self.pos:
             tags = [p[1] for p in path]
-            pos_prob = self.trigram_path_probability(tags, pipe='p', lower=False)
+            pos_prob = self.ngram_path_probability(tags, pipe='p')
         else:
             pos_prob = 0
         if self.pos == 1:
             return pos_prob
 
-        return self.pos * pos_prob + (1-self.pos) * self.trigram_path_probability([p[0] for p in path])
+        return self.pos * pos_prob + (1-self.pos) * self.ngram_path_probability([p[0] for p in path])
 
-    def closed_class_pos_trigram_path_probability(self, path):
+    def closed_class_pos_ngram_path_probability(self, path):
 
         if self.closed_class:
             closed_class_path = [p[0].lower() if (p[1] in self.closed_class_tags or p[0] in self.AUX) else p[1] for p in path]
-            closed_class_prob = self.trigram_path_probability(closed_class_path, pipe='c', lower=False)
+            closed_class_prob = self.ngram_path_probability(closed_class_path, pipe='c')
             assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s -- closed_class_path: %s" % (closed_class_prob, type(closed_class_prob), closed_class_path)
         else:
             closed_class_prob = 0
@@ -164,7 +191,7 @@ class Corrector():
         assert isinstance(self.closed_class, (int, float, long)), "%r :: %s" % (self.closed_class, type(self.closed_class))
         assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s" % (closed_class_prob, type(closed_class_prob))
 
-        x = self.trigram_path_probability([p[0] for p in path])
+        x = self.ngram_path_probability([p[0] for p in path])
         assert isinstance(x, (int, float, long)), "%r :: %s" % (x, type(x))
 
         return self.closed_class * closed_class_prob + (1-self.closed_class) * x
@@ -173,7 +200,7 @@ class Corrector():
 
         if self.closed_class:
             assert not self.pos, "POS and closed class models can't both be set."
-            return beam_search(tokens, self.width, self.get_error_prob, self.closed_class_pos_trigram_path_probability, self.variation_generator, self.verbose)
+            return beam_search(tokens, self.width, self.get_error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
 
-        return beam_search(tokens, self.width, self.get_error_prob, self.pos_trigram_path_probability, self.variation_generator, self.verbose)
+        return beam_search(tokens, self.width, self.get_error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
 

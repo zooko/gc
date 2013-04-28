@@ -13,6 +13,13 @@ class SRILMServerPipeTest(unittest.TestCase):
         result = server_pipe.log_probability(attested_5_gram.split())
         self.assertAlmostEqual(result, -1.201582, 5, msg=result)
 
+        result = server_pipe.log_probability(attested_5_gram.split())
+        self.assertAlmostEqual(result, -1.201582, 5, msg=result)
+
+        path = u'as a NN were are'
+        result = server_pipe.log_probability(path.split())
+        self.assertAlmostEqual(result, -4.1546, 5, msg=result)
+
         # TODO test backoff calculations for a variety of cases.
 
 if __name__ == '__main__':
