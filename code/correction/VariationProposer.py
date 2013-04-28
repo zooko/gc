@@ -97,7 +97,6 @@ class VariationProposer():
             for k in keys:
                 if pt in self.tag_dictionary[k]:
                     relevant_tag_prefix_tokens_with_tag.add((pt, k))
-                    break
         if (token, tag) in relevant_tag_prefix_tokens_with_tag:
             relevant_tag_prefix_tokens_with_tag.remove((token, tag))
         return relevant_tag_prefix_tokens_with_tag
