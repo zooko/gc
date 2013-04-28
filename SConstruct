@@ -69,8 +69,6 @@ def randomise_essays(target, source, env):
 
 def training_m2_5_to_gold(target, source, env):
      """
-     In addition to creating the gold file, we also make json'ed
-     insertables and deletables files.
      """
      train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
      with nested(
@@ -232,7 +230,7 @@ def real_correct(target, source, env):
         for i in range(len(vocabulary_sizes)):
             tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
             tmpipe_objs.append(tmpipe_obj)
-            var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, insertables, deletables)
+            var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
             variation_proposers.append(var_gen)
             if pos_weight:
                 correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
