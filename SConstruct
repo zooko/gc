@@ -84,13 +84,21 @@ def training_m2_5_to_gold(target, source, env):
          ):
          GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
 
-     return None
+def merge_external_corpus(target, source, env):
+
+    train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
+    external_corpus_file_obj = open_with_unicode(source[1].path, None, 'r')
+    merged_corpus_file_obj = open_with_unicode(target[0].path, None, 'w')
+    for line in external_corpus_file_obj:
+        merged_corpus_file_obj.write(line)
+    for line in train_gold_file_obj:
+        merged_corpus_file_obj.write(line)
 
 def create_vocabularies(target, source, env):
     """
     """
-    train_gold_file_name = source[0].path
-    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', train_gold_file_name, '-sort', '-write', data_directory + 'counts'])
+    merged_corpus_file_name = source[0].path
+    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', data_directory + 'counts'])
     srilm_ngram_counts.communicate()
 
     if vocabulary_sizes:
@@ -116,14 +124,14 @@ def create_vocabularies(target, source, env):
 
 def create_trigram_models(target, source, env):
 
-    train_gold_file_name = source[0].path
+    merged_corpus_file_name = source[0].path
 
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
         trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
         assert os.path.normpath(target[i].path) == os.path.normpath(trigram_model_name), target[i].path
-        srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', train_gold_file_name, '-lm', trigram_model_name])
+        srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', merged_corpus_file_name, '-lm', trigram_model_name])
         srilm_make_lm.communicate()
 
     return None
@@ -133,7 +141,9 @@ def get_pos_data(target, source, env):
     Creates pos_dictionary, POS training sets, pos_ngram_model.arpa, closed_class_pos_ngram_model.arpa
     '''
 
-    train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
+    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
+
+    merged_corpus_file_obj = open_with_unicode(source[0].path, None, 'r')
     with nested(
         open_with_unicode(target[1].path, None, 'w'), 
         open_with_unicode(target[2].path, None, 'w')
@@ -145,10 +155,10 @@ def get_pos_data(target, source, env):
 
         print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
         line_number = 1
-        for line in train_gold_file_obj:
+        for line in merged_corpus_file_obj:
             if not line_number % 100:
                 print '.',
-            words_and_tags = nltk.pos_tag(line.strip().split(' '))
+            words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
             for w, t in words_and_tags:
                 pos_training_file_obj.write(t + u' ')
                 if t in closed_class_tags or w.lower() in AUX:
@@ -163,14 +173,14 @@ def get_pos_data(target, source, env):
             closed_class_pos_training_file_obj.write('\n')
             line_number += 1
 
-        pos_dictionary = defaultdict(dict)
-        for k,v in pos_dictionary_set.iteritems():
-            pos_dictionary[k] = dict(v)
+    pos_dictionary = defaultdict(dict)
+    for k,v in pos_dictionary_set.iteritems():
+        pos_dictionary[k] = dict(v)
 
-        with open_with_unicode(target[0].path, None, 'w') as pos_dictionary_file_obj:
-            pos_dictionary_file_obj.write(json.dumps(pos_dictionary, sort_keys=True))
+    with open_with_unicode(target[0].path, None, 'w') as pos_dictionary_file_obj:
+        pos_dictionary_file_obj.write(json.dumps(pos_dictionary, sort_keys=True))
 
-        return None
+    return None
 
 def make_pos_ngram_models(target, source, env):
 
@@ -436,6 +446,11 @@ try:
 except:
     closed_class_weight = 0
 
+try:
+    external_corpus = str([x[1] for x in ARGLIST if x[0] == 'external_corpus'][0])
+except:
+    external_corpus = 'segmented_tokenised_corpus_section'
+
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
     vocabulary_sizes = [0.1, 0.5]
@@ -449,6 +464,7 @@ assert not (pos_weight and closed_class_weight), "Choose either pos_weight or cl
 
 learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
+merged_corpora_builder = Builder(action = merge_external_corpus)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
@@ -456,7 +472,7 @@ pos_ngram_model_builder = Builder(action = make_pos_ngram_models)
 corrections_builder = Builder(action = correct)
 scores_builder = Builder(action = score_corrections)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 
@@ -466,15 +482,19 @@ env.training_gold([data_directory + 'training_set_gold', data_directory + 'inser
 
 env.Alias('training_gold', [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'])
 
-env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'training_set_gold'])
+env.merge_external_corpus([data_directory + 'merged_training_corpora'], [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section'])
+
+env.Alias('merged_corpus', [data_directory + 'merged_training_corpora'])
+
+env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'])
 
 env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
-env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set_gold'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
-env.pos_data([data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']], [data_directory + "training_set_gold"])
+env.pos_data([data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']], [data_directory + "merged_training_corpora"])
 
 env.Alias("pos_data", [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']])
 
