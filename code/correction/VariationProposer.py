@@ -6,7 +6,7 @@ from nltk.stem import PorterStemmer
 
 class VariationProposer():
 
-    def __init__(self, tag_dictionary, tmpipe_obj, insertables, deletables):
+    def __init__(self, tag_dictionary, tmpipe_obj):
         self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
         self.tag_dictionary = defaultdict(list)
         for tag, token_count_dict in tag_dictionary.iteritems():
@@ -29,24 +29,33 @@ class VariationProposer():
                'was': 'VBD',
                'were': 'VBD'}
         closed_class_tags = ['IN', 'DT', 'TO', 'MD']
-        self.closed_class_preceder_tokens = set([])
-        for token in [i for i in insertables if tmpipe_obj.in_vocabulary(i)]:
-            for tag in closed_class_tags:
-                if token in tag_dictionary[tag]:
-                    self.closed_class_preceder_tokens.add((token, tag))
-                elif token in self.AUX.keys():
-                    self.closed_class_preceder_tokens.add((token, self.AUX[token]))
-        self.closed_class_deletables = set([])
-        for token in [d for d in deletables if tmpipe_obj.in_vocabulary(d)]:
-            for tag in closed_class_tags:
-                if token in tag_dictionary[tag]:
-                    self.closed_class_deletables.add((token, tag))
-                elif token in self.AUX.keys():
-                    self.closed_class_deletables.add((token, self.AUX[token]))
+#        self.closed_class_preceder_tokens = set([])
+#        for token in [i for i in insertables if tmpipe_obj.in_vocabulary(i)]:
+#            for tag in closed_class_tags:
+#                if token in tag_dictionary[tag]:
+#                    self.closed_class_preceder_tokens.add((token, tag))
+#                elif token in self.AUX.keys():
+#                    self.closed_class_preceder_tokens.add((token, self.AUX[token]))
+#        self.closed_class_deletables = set([])
+#        for token in [d for d in deletables if tmpipe_obj.in_vocabulary(d)]:
+#            for tag in closed_class_tags:
+#                if token in tag_dictionary[tag]:
+#                    self.closed_class_deletables.add((token, tag))
+#                elif token in self.AUX.keys():
+#                    self.closed_class_deletables.add((token, self.AUX[token]))
+
         self.closed_class_substitutables = {}
         for tag in closed_class_tags:
             counter = Counter(tag_dictionary[tag])
             self.closed_class_substitutables[tag] = dict(counter.most_common(5)).keys()
+
+        self.closed_class_preceder_tokens = set([])
+        self.closed_class_deletables = set([])
+        for tag in self.closed_class_substitutables.keys():
+            for token in self.closed_class_substitutables[tag]:
+                self.closed_class_preceder_tokens.add( (token, tag) )
+                self.closed_class_deletables.add( (token, tag) )
+
         self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
         self.cache_size = 500

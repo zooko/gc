@@ -7,7 +7,7 @@ from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest
 
 tag_dictionary = defaultdict(dict)
-tag_dictionary['DT'] = {"a": 22, "the": 40, "any": 2, "another": 1}
+tag_dictionary['DT'] = {"a": 22, "the": 40, "an": 30, "this": 10, "any": 2, "another": 1}
 tag_dictionary["IN"] = {"with":40, "from":40, "of":40}
 tag_dictionary["CC"] = {"and":40, "but":40, "or":40}
 tag_dictionary["VB"] = {"like":40, "love":40}
@@ -15,9 +15,6 @@ tag_dictionary["VBD"] = {'loved':40}
 tag_dictionary["VBG"] = {'loving':40}
 tag_dictionary['TO'] = {'to':40}
 tag_dictionary['MD'] = {'might':40, 'could':40}
-
-insertables = Counter(['of', 'from', 'could', 'a', 'the', 'are', 'engineering', 'waves', 'need'])
-deletables = Counter(['with', 'a', 'the', 'water'])
 
 l_vars = ['laboured', 'labyrinths', 'laden', 'lamp', 'like', 'love', 'lover', 'loves', 'loving']
 
@@ -30,7 +27,7 @@ def vocab_with_prefix(prefix):
 
 tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
 
-proposer = VariationProposer.VariationProposer(tag_dictionary, tmpipe_obj, insertables, deletables)
+proposer = VariationProposer.VariationProposer(tag_dictionary, tmpipe_obj)
 
 class VariationProposerTest(unittest.TestCase):
 
@@ -50,16 +47,15 @@ class VariationProposerTest(unittest.TestCase):
         self.assertSetEqual(proposed, set([("from", 'IN'), ("of", 'IN'), ()]), proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertSetEqual(proposed, set([("the", 'DT'), ("any", 'DT'), ("another", 'DT'), ()]), proposed)
+        self.assertSetEqual(proposed, set([("the", 'DT'), ("any", 'DT'), ("this", 'DT'), ("an", "DT"), ()]), proposed)
 
     def test_generate_path_variations(self):
-    #return ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
         tagged_sentence = [('We', 'PRP'), ('loved', 'VBD'), ('with', 'IN')]
         beginning = tagged_sentence[:-1]
 
         path_variations = proposer.generate_path_variations(tagged_sentence)
-        self.assertEquals(len(path_variations), 21, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertEquals(len(path_variations), 36, str(path_variations) + ": " + str(len(path_variations)))
         self.assertIn(beginning, path_variations, path_variations)
         self.assertIn(beginning + [('a', 'DT'), ('from', 'IN')], path_variations, path_variations)
         self.assertIn(beginning + [('a', 'DT'), ('of', 'IN')], path_variations, path_variations)
