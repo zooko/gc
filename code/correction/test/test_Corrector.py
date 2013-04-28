@@ -144,7 +144,7 @@ class CorrectorTest(unittest.TestCase):
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         small_insertables = json.load(open('code/correction/test/small_insertables', 'r'))
         small_deletables = json.load(open('code/correction/test/small_deletables', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj, small_insertables, small_deletables)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
