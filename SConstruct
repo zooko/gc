@@ -63,7 +63,7 @@ def randomise_essays(target, source, env):
         devel_m2_5_file_obj
         ):
         rand_obj = random.Random(seed)
-        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj)
+        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj, proportion)
         er.randomise()
         return None
 
@@ -428,6 +428,12 @@ try:
 except:
     print "Usage: scons data_directory=DIR variables target"
     raise Exception
+
+
+try:
+    proportion = float([x[1] for x in ARGLIST if x[0] == 'proportion'][0])
+except:
+    proportion = 0.99
 
 try:
     seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
