@@ -6,7 +6,7 @@ import unittest
 
 stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
-model_path = 'stanford-tagger/models/english-bidirectional-distsim.tagger'
+model_path = 'stanford-tagger/english-bidirectional-distsim.tagger'
 
 tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(stanford_tagger_path, module_path, model_path)
 
