@@ -389,7 +389,7 @@ def score_corrections(target, source, env):
 def pythonic_score_corrections(target, source, env):
     gold_fname = os.path.join(data_directory, 'development_set_m2_5')
 
-    scorer = M2Scorer(open_with_unicode(gold_fname, None, 'r'), verbose=True, max_unchanged_words=7)
+    scorer = M2Scorer(open_with_unicode(gold_fname, None, 'r'), verbose=True)
 
     for i in range(len(vocabulary_sizes)):
         print source[i].path
@@ -402,7 +402,7 @@ def subprocess_score_corrections(target, source, env):
     for i in range(len(vocabulary_sizes)):
         with open_with_unicode(target[i].path, None, 'w') as score_file_obj:
             print source[i].path
-            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
+            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
             scorer.communicate(None)
 
     return None
