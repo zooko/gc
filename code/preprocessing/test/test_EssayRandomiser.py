@@ -8,6 +8,7 @@ import unittest, StringIO, random
 class EssayRandomiserTest(unittest.TestCase):
 
     def test_randomise(self):
+        self.skipTest('')
 
         e1 = ["829     0       0       0       CREATING        NNP     3       nn      (ROOT(NP*\n",
               "829     0       0       1       A       NNP     3       nn      *\n",
