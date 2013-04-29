@@ -18,7 +18,7 @@ from BackOffTrigramModel import BackOffTrigramModelPipe
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
-from code.correction import VariationProposer, Corrector
+from code.correction import VariationProposer, Corrector, ScoreIntegrator
 
 def open_with_unicode(file_name, compression_type, mode):
     assert compression_type in [None, 'gzip', 'bzip2']
@@ -411,6 +411,13 @@ def subprocess_score_corrections(target, source, env):
 
     return None
 
+def integrate_scores(target, source, env):
+
+    f = open(target[0].path, 'w')
+    f.write(repr(ScoreIntegrator.integrate_scores(data_directory)))
+
+    return None
+
 
 # Hard coding this for now... TODO make variables
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
@@ -488,8 +495,9 @@ pos_data_builder = Builder(action = get_pos_data)
 pos_ngram_model_builder = Builder(action = make_pos_ngram_models)
 corrections_builder = Builder(action = correct)
 scores_builder = Builder(action = score_corrections)
+integrated_scores_builder = Builder(action = integrate_scores)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder, 'integrated_scores': integrated_scores_builder})
 
 learning_sets_targets = [seed_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
 env.learning_sets(learning_sets_targets, [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
@@ -526,3 +534,6 @@ env.Alias('corrections', corrections_targets)
 scores_targets = [seed_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
 env.scores(scores_targets, [seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
 env.Alias('scores', scores_targets)
+
+env.integrated_scores([data_directory + 'integrated_scores'], scores_targets)
+env.Alias('integrated_scores', [data_directory + 'integrated_scores'])
