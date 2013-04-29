@@ -16,7 +16,7 @@ import codecs, contextlib, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
-from code.preprocessing import EssayRandomiser, GoldGenerator
+from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
 from code.correction import VariationProposer, Corrector
 
@@ -48,11 +48,11 @@ def randomise_essays(target, source, env):
     m2_file_obj = open_with_unicode(source[1].path, None, 'r')
     m2_5_file_obj = open_with_unicode(source[2].path, None, 'r')
     with nested (
-        open_with_unicode(target[0].path, None, 'w'), 
-        open_with_unicode(target[1].path, None, 'w'), 
-        open_with_unicode(target[2].path, None, 'w'), 
-        open_with_unicode(target[3].path, None, 'w'), 
-        open_with_unicode(target[4].path, None, 'w'), 
+        open_with_unicode(target[0].path, None, 'w'),
+        open_with_unicode(target[1].path, None, 'w'),
+        open_with_unicode(target[2].path, None, 'w'),
+        open_with_unicode(target[3].path, None, 'w'),
+        open_with_unicode(target[4].path, None, 'w'),
         open_with_unicode(target[5].path, None, 'w')
         ) as (
         train_conll_file_obj,
@@ -72,12 +72,12 @@ def training_m2_5_to_gold(target, source, env):
      """
      train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
      with nested(
-         open_with_unicode(target[0].path, None, 'w'), 
-         open_with_unicode(target[1].path, None, 'w'), 
+         open_with_unicode(target[0].path, None, 'w'),
+         open_with_unicode(target[1].path, None, 'w'),
          open_with_unicode(target[2].path, None, 'w')
          ) as (
-         train_gold_file_obj, 
-         insertables_file_obj, 
+         train_gold_file_obj,
+         insertables_file_obj,
          deletables_file_obj
          ):
          GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
@@ -143,7 +143,7 @@ def get_pos_data(target, source, env):
 
     merged_corpus_file_obj = open_with_unicode(source[0].path, None, 'r')
     with nested(
-        open_with_unicode(target[1].path, None, 'w'), 
+        open_with_unicode(target[1].path, None, 'w'),
         open_with_unicode(target[2].path, None, 'w')
         ) as (
         pos_training_file_obj,
@@ -334,7 +334,7 @@ class M2Scorer:
         self.verbose = verbose
         self.max_unchanged_words = max_unchanged_words
         self.ignore_whitespace_casing = ignore_whitespace_casing
-        self.very_verbose = very_verbose 
+        self.very_verbose = very_verbose
 
         self.source_sentences = []
         self.gold_edits = []
@@ -404,6 +404,7 @@ def subprocess_score_corrections(target, source, env):
 
 
 # Hard coding this for now... TODO make variables
+module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
 closed_class_tags = ['IN', 'DT', 'TO', 'MD']
 AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 
