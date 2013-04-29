@@ -8,11 +8,15 @@ del sys.modules['pickle']
 
 import os
 
-import codecs, bz2, gzip, random, subprocess, json
+import nltk
+
+from contextlib import nested
+
+import codecs, contextlib, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
-from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
+from code.preprocessing import EssayRandomiser, GoldGenerator
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
 from code.correction import VariationProposer, Corrector
 
@@ -43,26 +47,40 @@ def randomise_essays(target, source, env):
     essay_file_obj = open_with_unicode(source[0].path, None, 'r')
     m2_file_obj = open_with_unicode(source[1].path, None, 'r')
     m2_5_file_obj = open_with_unicode(source[2].path, None, 'r')
-    train_conll_file_obj = open_with_unicode(target[0].path, None, 'w')
-    train_m2_file_obj = open_with_unicode(target[1].path, None, 'w')
-    train_m2_5_file_obj = open_with_unicode(target[2].path, None, 'w')
-    devel_conll_file_obj = open_with_unicode(target[3].path, None, 'w')
-    devel_m2_file_obj = open_with_unicode(target[4].path, None, 'w')
-    devel_m2_5_file_obj = open_with_unicode(target[5].path, None, 'w')
-    rand_obj = random.Random(seed)
-    er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj)
-    er.randomise()
-    return None
+    with nested (
+        open_with_unicode(target[0].path, None, 'w'), 
+        open_with_unicode(target[1].path, None, 'w'), 
+        open_with_unicode(target[2].path, None, 'w'), 
+        open_with_unicode(target[3].path, None, 'w'), 
+        open_with_unicode(target[4].path, None, 'w'), 
+        open_with_unicode(target[5].path, None, 'w')
+        ) as (
+        train_conll_file_obj,
+        train_m2_file_obj,
+        train_m2_5_file_obj,
+        devel_conll_file_obj,
+        devel_m2_file_obj,
+        devel_m2_5_file_obj
+        ):
+        rand_obj = random.Random(seed)
+        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj)
+        er.randomise()
+        return None
 
 def training_m2_5_to_gold(target, source, env):
      """
      """
      train_m2_5_file_obj = open_with_unicode(source[0].path, None, 'r')
-     train_gold_file_obj = open_with_unicode(target[0].path, None, 'w')
-     insertables_file_obj = open_with_unicode(target[1].path, None, 'w')
-     deletables_file_obj = open_with_unicode(target[2].path, None, 'w')
-     GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
-     return None
+     with nested(
+         open_with_unicode(target[0].path, None, 'w'), 
+         open_with_unicode(target[1].path, None, 'w'), 
+         open_with_unicode(target[2].path, None, 'w')
+         ) as (
+         train_gold_file_obj, 
+         insertables_file_obj, 
+         deletables_file_obj
+         ):
+         GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
 
 def merge_external_corpus(target, source, env):
 
@@ -79,27 +97,27 @@ def create_vocabularies(target, source, env):
     """
     merged_corpus_file_name = source[0].path
     srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', data_directory + 'counts'])
-    srilm_ngram_counts.wait()
+    srilm_ngram_counts.communicate()
 
     if vocabulary_sizes:
         unigram_counts_file_obj = open_with_unicode(data_directory + 'counts', None, 'r')
         size = vocabulary_sizes[0]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
         assert os.path.normpath(target[0].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[0].path + '; Expected: ' + vocabulary_file_name
-        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
-        cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
-        cutter.cut_vocabulary(int(float(size)*1000))
-        vocabulary_file_obj.close()
-        base_vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'r')
-        base_vocabulary = base_vocabulary_file_obj.readlines()
+        with open_with_unicode(vocabulary_file_name, None, 'w') as vocabulary_file_obj:
+            cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+            cutter.cut_vocabulary(int(float(size)*1000))
+            vocabulary_file_obj.close()
+            base_vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'r')
+            base_vocabulary = base_vocabulary_file_obj.readlines()
 
-        for i in range(len(vocabulary_sizes))[1:]:
-            size = vocabulary_sizes[i]
-            vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-            assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
-            vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
-            for line in base_vocabulary[:int(float(size)*1000)]:
-                vocabulary_file_obj.write(line)
+            for i in range(len(vocabulary_sizes))[1:]:
+                size = vocabulary_sizes[i]
+                vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+                assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
+                vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
+                for line in base_vocabulary[:int(float(size)*1000)]:
+                    vocabulary_file_obj.write(line)
     return None
 
 def create_trigram_models(target, source, env):
@@ -112,7 +130,7 @@ def create_trigram_models(target, source, env):
         trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
         assert os.path.normpath(target[i].path) == os.path.normpath(trigram_model_name), target[i].path
         srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', merged_corpus_file_name, '-lm', trigram_model_name])
-        srilm_make_lm.wait()
+        srilm_make_lm.communicate()
 
     return None
 
@@ -124,42 +142,50 @@ def get_pos_data(target, source, env):
     tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
 
     merged_corpus_file_obj = open_with_unicode(source[0].path, None, 'r')
-    pos_training_file_obj = open_with_unicode(target[1].path, None, 'w')
-    closed_class_pos_training_file_obj = open_with_unicode(target[2].path, None, 'w')
-    pos_dictionary_set = defaultdict()
+    with nested(
+        open_with_unicode(target[1].path, None, 'w'), 
+        open_with_unicode(target[2].path, None, 'w')
+        ) as (
+        pos_training_file_obj,
+        closed_class_pos_training_file_obj
+        ):
+        pos_dictionary_set = defaultdict()
 
-    print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
-    line_number = 1
-    for line in merged_corpus_file_obj:
-        if not line_number % 100:
-            print '.',
-        words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
-        for w, t in words_and_tags:
-            pos_training_file_obj.write(t + u' ')
-            if t in closed_class_tags or w.lower() in AUX:
-                closed_class_pos_training_file_obj.write(w.lower() + u' ')
-            else:
-                closed_class_pos_training_file_obj.write(t + u' ')
-            if not pos_dictionary_set.has_key(t):
-                pos_dictionary_set[t] = Counter()
-            pos_dictionary_set[t][w.lower()] += 1
+        print repr(get_pos_data), "POS tagging.  Progress dots per 100 sentences."
+        line_number = 1
+        for line in merged_corpus_file_obj:
+            if not line_number % 100:
+                print '.',
+            words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
+            for w, t in words_and_tags:
+                pos_training_file_obj.write(t + u' ')
+                if t in closed_class_tags or w.lower() in AUX:
+                    closed_class_pos_training_file_obj.write(w.lower() + u' ')
+                else:
+                    closed_class_pos_training_file_obj.write(t + u' ')
+                if not pos_dictionary_set.has_key(t):
+                    pos_dictionary_set[t] = Counter()
+                pos_dictionary_set[t][w.lower()] += 1
 
-        pos_training_file_obj.write('\n')
-        closed_class_pos_training_file_obj.write('\n')
-        line_number += 1
+            pos_training_file_obj.write('\n')
+            closed_class_pos_training_file_obj.write('\n')
+            line_number += 1
 
     pos_dictionary = defaultdict(dict)
     for k,v in pos_dictionary_set.iteritems():
         pos_dictionary[k] = dict(v)
 
-    pos_dictionary_file_obj = open_with_unicode(target[0].path, None, 'w')
-    pos_dictionary_file_obj.write(json.dumps(pos_dictionary))
+    with open_with_unicode(target[0].path, None, 'w') as pos_dictionary_file_obj:
+        pos_dictionary_file_obj.write(json.dumps(pos_dictionary, sort_keys=True))
 
     return None
 
 def make_pos_ngram_models(target, source, env):
 
+    # pos_trigram_model.arpa, from pos_training_set
     subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
+
+    # closed_class_pos_trigram_model.arpa, from closed_class_pos_training_set
     subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
 
     return None
@@ -200,29 +226,32 @@ def real_correct(target, source, env):
     correctors = []
     corrections_file_objs = []
     tmpipe_objs = []
-    for i in range(len(vocabulary_sizes)):
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
-        tmpipe_objs.append(tmpipe_obj)
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        variation_proposers.append(var_gen)
-        if pos_weight:
-            correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
-        else:
-            correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
-        corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
+    try:
+        for i in range(len(vocabulary_sizes)):
+            tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
+            tmpipe_objs.append(tmpipe_obj)
+            var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
+            variation_proposers.append(var_gen)
+            if pos_weight:
+                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
+            else:
+                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
+            corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
-    tagged_tokens = []
-    for line in open_with_unicode(source[0].path, None, 'r'):
-        if line == '\n':
-            if tagged_tokens:
-                for i in range(len(vocabulary_sizes)):
-                    correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
-                    corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
-                    corrections_file_objs[i].flush()
-                tagged_tokens = []
-        else:
-            split_line = line.split()
-            tagged_tokens.append( (split_line[4], split_line[5]) )
+        tagged_tokens = []
+        for line in open_with_unicode(source[0].path, None, 'r'):
+            if line == '\n':
+                if tagged_tokens:
+                    for i in range(len(vocabulary_sizes)):
+                        correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
+                        corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
+                    tagged_tokens = []
+            else:
+                split_line = line.split()
+                tagged_tokens.append( (split_line[4], split_line[5]) )
+    finally:
+        for corrections_file_obj in  corrections_file_objs:
+            corrections_file_obj.close()
 
     for i in range(len(variation_proposers)):
         variation_proposers[i].print_cache_stats()
@@ -360,23 +389,21 @@ def pythonic_score_corrections(target, source, env):
     for i in range(len(vocabulary_sizes)):
         print source[i].path
         res_ufo = open_with_unicode(source[i].path, None, 'r')
-        score_file_obj = open_with_unicode(target[i].path, None, 'w')
-        scorer.score(res_ufo, score_file_obj)
+        with open_with_unicode(target[i].path, None, 'w') as score_file_obj:
+            scorer.score(res_ufo, score_file_obj)
 
 def subprocess_score_corrections(target, source, env):
 
     for i in range(len(vocabulary_sizes)):
-        score_file_obj = open_with_unicode(target[i].path, None, 'w')
-
-        print source[i].path
-        scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
-        scorer.communicate(None)
+        with open_with_unicode(target[i].path, None, 'w') as score_file_obj:
+            print source[i].path
+            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', '--max_unchanged_words', '7', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
+            scorer.communicate(None)
 
     return None
 
 
 # Hard coding this for now... TODO make variables
-module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
 closed_class_tags = ['IN', 'DT', 'TO', 'MD']
 AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 

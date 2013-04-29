@@ -38,16 +38,16 @@ class VariationProposerTest(unittest.TestCase):
         tags = ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
         proposed = proposer.get_alternatives(tokens[0], tags[0])
-        self.assertSetEqual(proposed, set([]), proposed)
+        self.assertSetEqual(set(proposed), set([]), proposed)
 
         proposed = proposer.get_alternatives(tokens[1], tags[1])
-        self.assertSetEqual(proposed, set([('love', 'VB')]), proposed)
+        self.assertSetEqual(set(proposed), set([('love', 'VB')]), proposed)
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
-        self.assertSetEqual(proposed, set([("from", 'IN'), ("of", 'IN'), ()]), proposed)
+        self.assertSetEqual(set(proposed), set([("from", 'IN'), ("of", 'IN'), ()]), proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertSetEqual(proposed, set([("the", 'DT'), ("any", 'DT'), ("this", 'DT'), ("an", "DT"), ()]), proposed)
+        self.assertSetEqual(set(proposed), set([("the", 'DT'), ("any", 'DT'), ("this", 'DT'), ("an", "DT"), ()]), proposed)
 
     def test_generate_path_variations(self):
 
