@@ -14,10 +14,10 @@ class StanfordTaggerPipeTest(unittest.TestCase):
 
     def setUp(self):
 
-        self.s0 = "Hello , World .\n"
-        self.s1 = "Hello again , World .\n"
-        self.s2 = "- { http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php } [ HYPERLINK : http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php ]\n"
-        self.s3 = "Hence the RTI system is very inexpensively and can be commonly used ( Retinal Technologies , Inc. Launches Company and Revolutionizes Biometrics With Patented Retinal Scanning Technology , 2001 ) ."
+        self.s0 = u"Hello , World .\n"
+        self.s1 = u"Hello again , World .\n"
+        self.s2 = u"- { http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php } [ HYPERLINK : http : //uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php ]\n"
+        self.s3 = u"Hence the RTI system is very inexpensively and can be commonly used ( Retinal Technologies , Inc. Launches Company and Revolutionizes Biometrics With Patented Retinal Scanning Technology , 2001 ) ."
 
     def test_stanford_tagger_pipe(self):
 
@@ -66,7 +66,7 @@ class StanfordTaggerPipeTest(unittest.TestCase):
              words_and_tags_list)
 
     def test_multi_sentence_line(self):
-        multi_sentence = 'I am .  More than one .\n'
+        multi_sentence = u'I am .  More than one .\n'
         tags_list = tagger_pipe.tags_list(multi_sentence)
         self.assertEqual(tags_list, ['PRP', 'VBP', '.', 'JJR', 'IN', 'CD', '.'], tags_list)
         words_and_tags_list = tagger_pipe.words_and_tags_list(multi_sentence)
@@ -76,6 +76,12 @@ class StanfordTaggerPipeTest(unittest.TestCase):
         for i in words_and_tags_list:
             self.assertIsInstance(i[0], unicode, i)
             self.assertIsInstance(i[1], unicode, i)
+
+    def test_unicode(self):
+        self.skipTest('')
+        unicode_sentence = '496e204275726d6573652063756973696e65202c2061207377656574206a656c6c79206b6e6f776e2061732022206b7961756b206b7961772022202820e2808b20e180b120e1808020e180bb20e180ac20e1808020e180ba20e2808b20e180b120e1808020e180bc20e180ac205b207420ca8320616f20ca94207420ca83206175205d2029206973206d6164652066726f6d2061676172202e0a'.decode('hex').decode('utf-8')
+        words_and_tags_list = tagger_pipe.words_and_tags_list(unicode_sentence)
+        self.assertListEqual(words_and_tags_list, [], words_and_tags_list)
 
 
 if __name__ == '__main__':

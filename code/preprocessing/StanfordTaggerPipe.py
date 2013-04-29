@@ -16,10 +16,12 @@ class StanfordTaggerPipe:
         tagger has special tokens for parentheses needed for good
         performance.  Here we translate those.
         '''
+        assert isinstance(sentence, unicode), sentence
         left_parentheses = '{[('
         right_parentheses = '}])'
         for lp in left_parentheses: sentence = sentence.replace(lp, "-LRB-")
         for rp in right_parentheses: sentence = sentence.replace(rp, "-RRB-")
+        assert isinstance(sentence, unicode), sentence
         return sentence
 
     def tags_list(self, token_string):
@@ -47,11 +49,14 @@ class StanfordTaggerPipe:
         return [y[-1].decode('utf-8') for y in [x.rpartition('_') for x in result_tokens]]
 
     def words_and_tags_list(self, token_string):
-        self.stdin_byte_writer.write(self.tokenise_parentheses(token_string) + '\n')
+        assert isinstance(token_string, unicode), token_string
+        parenthesised = self.tokenise_parentheses(token_string) + '\n'
+        self.tagger_pipe.stdin.write(parenthesised.encode('utf-8'))
+        self.tagger_pipe.stdin.flush()
         result = self.stdout.readline()
         newline = self.stdout.readline()
         assert(newline == '\n'), repr(newline)
-        tokens = token_string.split()
+        tokens = parenthesised.split()
         result_tokens = result.split()
 
         # See comment in tags_list
