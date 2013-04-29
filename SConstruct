@@ -482,38 +482,38 @@ scores_builder = Builder(action = score_corrections)
 
 env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
 
-env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
+learning_sets_targets = [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
+env.learning_sets(learning_sets_targets, [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
+env.Alias('learning_sets', learning_sets_targets)
 
-env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']])
+training_gold_targets = [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables']
+env.training_gold(training_gold_targets, [data_directory + 'training_set_m2_5'])
+env.Alias('training_gold', training_gold_targets)
 
-env.training_gold([data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'], [data_directory + 'training_set_m2_5'])
+merged_external_corpus_target = [data_directory + 'merged_training_corpora']
+env.merge_external_corpus(merged_external_corpus_target, [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
+env.Alias('merged_corpus', merged_external_corpus_target)
 
-env.Alias('training_gold', [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'])
+vocabulary_files_targets = [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes]
+env.vocabulary_files(vocabulary_files_targets, [data_directory + 'merged_training_corpora'])
+env.Alias('vocabulary_files', vocabulary_files_targets)
 
-env.merge_external_corpus([data_directory + 'merged_training_corpora'], [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
+trigram_models_targets = [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes]
+env.trigram_models(trigram_models_targets, [data_directory + 'merged_training_corpora'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.Alias('trigram_models', trigram_models_targets)
 
-env.Alias('merged_corpus', [data_directory + 'merged_training_corpora'])
+pos_data_targets = [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']]
+env.pos_data(pos_data_targets, [data_directory + "merged_training_corpora"])
+env.Alias("pos_data", pos_data_targets)
 
-env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'])
+pos_ngram_models_targets = [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa']
+env.pos_ngram_models(pos_ngram_models_targets, [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
+env.Alias('pos_ngram_models', pos_ngram_models_targets)
 
-env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+corrections_targets = [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.corrections(corrections_targets, [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('corrections', corrections_targets)
 
-env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
-
-env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
-
-env.pos_data([data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']], [data_directory + "merged_training_corpora"])
-
-env.Alias("pos_data", [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']])
-
-env.pos_ngram_models([data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'], [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
-
-env.Alias('pos_ngram_models', [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'])
-
-env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
-
-env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
-
-env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
-
-env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
+scores_targets = [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.scores(scores_targets, [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
+env.Alias('scores', scores_targets)
