@@ -105,13 +105,13 @@ def create_vocabularies(target, source, env):
     """
     """
     merged_corpus_file_name = source[0].path
-    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', data_directory + 'counts'])
+    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', seed_directory + 'counts'])
     srilm_ngram_counts.communicate()
 
     if vocabulary_sizes:
-        unigram_counts_file_obj = open_with_unicode(data_directory + 'counts', None, 'r')
+        unigram_counts_file_obj = open_with_unicode(seed_directory + 'counts', None, 'r')
         size = vocabulary_sizes[0]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+        vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
         assert os.path.normpath(target[0].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[0].path + '; Expected: ' + vocabulary_file_name
         with open_with_unicode(vocabulary_file_name, None, 'w') as vocabulary_file_obj:
             cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
@@ -122,7 +122,7 @@ def create_vocabularies(target, source, env):
 
             for i in range(len(vocabulary_sizes))[1:]:
                 size = vocabulary_sizes[i]
-                vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+                vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
                 assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
                 vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
                 for line in base_vocabulary[:int(float(size)*1000)]:
@@ -135,8 +135,8 @@ def create_trigram_models(target, source, env):
 
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
+        vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
+        trigram_model_name = seed_directory + 'trigram_model_' + str(size) + 'K.arpa'
         assert os.path.normpath(target[i].path) == os.path.normpath(trigram_model_name), target[i].path
         srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', merged_corpus_file_name, '-lm', trigram_model_name])
         srilm_make_lm.communicate()
@@ -391,7 +391,7 @@ def score_corrections(target, source, env):
     # return subprocess_score_corrections(target, source, env)
 
 def pythonic_score_corrections(target, source, env):
-    gold_fname = os.path.join(data_directory, 'development_set_m2_5')
+    gold_fname = os.path.join(seed_directory, 'development_set_m2_5')
 
     scorer = M2Scorer(open_with_unicode(gold_fname, None, 'r'), verbose=True)
 
@@ -406,7 +406,7 @@ def subprocess_score_corrections(target, source, env):
     for i in range(len(vocabulary_sizes)):
         with open_with_unicode(target[i].path, None, 'w') as score_file_obj:
             print source[i].path
-            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
+            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', source[i].path, seed_directory + 'development_set_m2_5'], stdout=score_file_obj)
             scorer.communicate(None)
 
     return None
@@ -470,6 +470,9 @@ else:
 
 assert not (pos_weight and closed_class_weight), "Choose either pos_weight or closed_class_weight."
 
+seed_directory = data_directory + "seed_" + str(seed) + '/'
+if not os.path.exists(seed_directory): os.mkdir(seed_directory)
+
 learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
 merged_corpora_builder = Builder(action = merge_external_corpus)
@@ -482,38 +485,38 @@ scores_builder = Builder(action = score_corrections)
 
 env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
 
-learning_sets_targets = [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
+learning_sets_targets = [seed_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
 env.learning_sets(learning_sets_targets, [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
 env.Alias('learning_sets', learning_sets_targets)
 
-training_gold_targets = [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables']
-env.training_gold(training_gold_targets, [data_directory + 'training_set_m2_5'])
+training_gold_targets = [seed_directory + f for f in ['training_set_gold', 'insertables', 'deletables']]
+env.training_gold(training_gold_targets, [seed_directory + 'training_set_m2_5'])
 env.Alias('training_gold', training_gold_targets)
 
-merged_external_corpus_target = [data_directory + 'merged_training_corpora']
-env.merge_external_corpus(merged_external_corpus_target, [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
+merged_external_corpus_target = [seed_directory + 'merged_training_corpora']
+env.merge_external_corpus(merged_external_corpus_target, [seed_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
 env.Alias('merged_corpus', merged_external_corpus_target)
 
-vocabulary_files_targets = [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes]
-env.vocabulary_files(vocabulary_files_targets, [data_directory + 'merged_training_corpora'])
-env.Alias('vocabulary_files', vocabulary_files_targets)
-
-trigram_models_targets = [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes]
-env.trigram_models(trigram_models_targets, [data_directory + 'merged_training_corpora'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
-env.Alias('trigram_models', trigram_models_targets)
-
-pos_data_targets = [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']]
-env.pos_data(pos_data_targets, [data_directory + "merged_training_corpora"])
+pos_data_targets = [seed_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']]
+env.pos_data(pos_data_targets, [seed_directory + "merged_training_corpora"])
 env.Alias("pos_data", pos_data_targets)
 
-pos_ngram_models_targets = [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa']
-env.pos_ngram_models(pos_ngram_models_targets, [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
+pos_ngram_models_targets = [seed_directory + 'pos_ngram_model.arpa', seed_directory + 'closed_class_pos_ngram_model.arpa']
+env.pos_ngram_models(pos_ngram_models_targets, [seed_directory + 'pos_training_set', seed_directory + 'closed_class_pos_training_set'])
 env.Alias('pos_ngram_models', pos_ngram_models_targets)
 
-corrections_targets = [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
-env.corrections(corrections_targets, [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+vocabulary_files_targets = [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes]
+env.vocabulary_files(vocabulary_files_targets, [seed_directory + 'merged_training_corpora'])
+env.Alias('vocabulary_files', vocabulary_files_targets)
+
+trigram_models_targets = [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes]
+env.trigram_models(trigram_models_targets, [seed_directory + 'merged_training_corpora'] + [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.Alias('trigram_models', trigram_models_targets)
+
+corrections_targets = [seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.corrections(corrections_targets, [seed_directory + 'development_set', seed_directory + 'pos_dictionary', seed_directory + 'insertables', seed_directory + 'deletables', seed_directory + 'pos_ngram_model.arpa', seed_directory + 'closed_class_pos_ngram_model.arpa'] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 env.Alias('corrections', corrections_targets)
 
-scores_targets = [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
-env.scores(scores_targets, [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
+scores_targets = [seed_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.scores(scores_targets, [seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
 env.Alias('scores', scores_targets)
