@@ -17,23 +17,18 @@ class StanfordTaggerPipeTest(unittest.TestCase):
     def test_words_and_tags_list(self):
 
         words_and_tags_list = self.tagger.words_and_tags_list(self.s0)
-        self.assertEqual(words_and_tags_list, [(u'Hello', 'UH'), (u',', ','), (u'World', 'NNP'), (u'.', '.')], words_and_tags_list)
+        self.assertEqual(words_and_tags_list, [(u'Hello', 'NNP'), (u',', ','), (u'World', 'NNP'), (u'.', '.')], (words_and_tags_list, self.s0))
         words_and_tags_list = self.tagger.words_and_tags_list(self.s1)
-        self.assertEqual(words_and_tags_list, \
-          [('Hello', 'UH'), ('again', 'RB'), (',', ','), ('World', 'NNP'), ('.', '.')],  \
-             words_and_tags_list)
+        self.assertEqual(words_and_tags_list, [(u'Hello', 'NNP'), (u'again', 'RB'), (u',', ','), (u'World', 'NNP'), (u'.', '.')], (words_and_tags_list, self.s1))
         words_and_tags_list = self.tagger.words_and_tags_list(self.s2)
-        self.assertListEqual(words_and_tags_list, \
-             [('-', ':'), ('-LRB-', '-LRB-'), ('http', 'JJ'), (':', ':'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'NN'), ('-RRB-', '-RRB-'), ('-LRB-', '-LRB-'), ('HYPERLINK', 'NN'), (':', ':'), ('http', 'NN'), (':', ':'), ('//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'NN'), ('-RRB-', '-RRB-')], \
-             words_and_tags_list)
+        self.assertListEqual(words_and_tags_list, [(u'-', ':'), (u'{', '``'), (u'http', 'NN'), (u':', ':'), (u'//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'JJ'), (u'}', 'NN'), (u'[', ':'), (u'HYPERLINK', 'NNP'), (u':', ':'), (u'http', 'NN'), (u':', ':'), (u'//uci.edu/features/2009/07/feature_alzheimersstemcell_090720.php', 'JJ'), (u']', 'NN')], (words_and_tags_list, self.s2))
 
     def test_multi_sentence_line(self):
         multi_sentence = u'I am .  More than one .\n'
         words_and_tags_list = self.tagger.words_and_tags_list(multi_sentence)
-        self.assertListEqual(words_and_tags_list, [(u'I', 'PRP'), (u'am', 'VBP'), (u'.', '.'), (u'More', 'JJR'), (u'than', 'IN'), (u'one', 'CD'), (u'.', '.')], words_and_tags_list)
+        self.assertListEqual(words_and_tags_list, [(u'I', 'PRP'), (u'am', 'VBP'), (u'.', '.'), (u'More', 'RBR'), (u'than', 'IN'), (u'one', 'CD'), (u'.', '.')], (words_and_tags_list, multi_sentence))
         for i in words_and_tags_list:
             self.assertIsInstance(i[0], unicode, i)
-            self.assertIsInstance(i[1], unicode, i)
 
     def test_unicode(self):
         unicode_sentence = '496e204275726d6573652063756973696e65202c2061207377656574206a656c6c79206b6e6f776e2061732022206b7961756b206b7961772022202820e2808b20e180b120e1808020e180bb20e180ac20e1808020e180ba20e2808b20e180b120e1808020e180bc20e180ac205b207420ca8320616f20ca94207420ca83206175205d2029206973206d6164652066726f6d2061676172202e0a'.decode('hex').decode('utf-8')
