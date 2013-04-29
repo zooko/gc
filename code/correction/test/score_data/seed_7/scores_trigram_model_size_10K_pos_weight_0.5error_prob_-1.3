@@ -1,0 +1,513 @@
+SOURCE        : I agree to a large extent that current policies have helped to ease the aging process .
+HYPOTHESIS    : I agree to a large extent that current policies have helped to ease the aging process .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 0.0
+# proposed    : 0.0
+# gold        : 0.0
+precision     : 1.0
+recall        : 1.0
+f1            : 1.0
+-------------------------------------------
+SOURCE        : Being one of the top aging populations in Asia , Singapore has to be prepared for the challenges to be faced currently or in the future when Singapore turns into a prominent ageing society .
+HYPOTHESIS    : Being one of the top aging populations in Asia , Singapore has to be prepared for the challenges to be faced currently or in the future when Singapore turns into a prominent ageing society .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 0.0
+# proposed    : 0.0
+# gold        : 0.0
+precision     : 1.0
+recall        : 1.0
+f1            : 1.0
+-------------------------------------------
+SOURCE        : In order to take care of the challenges , Singapore government has implemented several policies such as housing , health and employment policies to overcome the obstacles of the aging phenomenon as well as to provide an " effortlessly " aging process .
+HYPOTHESIS    : In order to take care of the challenges , the Singapore government has implemented several policies such as housing , health and employment policies to overcome the obstacles of the aging phenomenon as well as to provide an " effortlessly " aging process .
+EDIT SEQ      : [(9, 11, u'Singapore government', u'the Singapore government')]
+GOLD EDITS    : [(9, 11, u'Singapore government', [u'the Singapore government'])]
+CORRECT EDITS : [(9, 11, u'Singapore government', u'the Singapore government')]
+# correct     : 1.0
+# proposed    : 1.0
+# gold        : 1.0
+precision     : 1.0
+recall        : 1.0
+f1            : 1.0
+-------------------------------------------
+SOURCE        : One of the policies is the housing policy , which strongly encourages extended family by providing incentives and also to provide the 'Elder- friendly housing ' for the senior citizens .
+HYPOTHESIS    : One of the policies is the housing policy , which strongly encourages the extended family by providing incentives and also to provide the 'Elder- friendly housing ' for the senior citizens .
+EDIT SEQ      : [(10, 12, u'strongly encourages', u'strongly encourages the')]
+GOLD EDITS    : [(13, 14, u'family', [u'families']), (27, 31, u'the senior citizens .', [u'senior citizens .'])]
+CORRECT EDITS : []
+# correct     : 1.0
+# proposed    : 2.0
+# gold        : 3.0
+precision     : 0.5
+recall        : 0.333333333333
+f1            : 0.4
+-------------------------------------------
+SOURCE        : Report from Government of Singapore 2000 , shows that in year 2000 , around 9 out of 10 senior citizens who are above sixty-five years old are living together with their children ( Government of Singapore 2000 , p.5 ) .
+HYPOTHESIS    : Report from the Government of Singapore in 2000 , shows that in the year 2000 , around 9 out of 10 senior citizens who are above the sixty-five years old are living together with their children ( Government of Singapore 2000 , p.5 ) .
+EDIT SEQ      : [(21, 23, u'are above', u'are above the'), (10, 12, u'year 2000', u'the year 2000'), (4, 6, u'Singapore 2000', u'Singapore in 2000'), (1, 3, u'from Government', u'from the Government')]
+GOLD EDITS    : [(0, 2, u'Report from', [u'A report']), (2, 6, u'Government of Singapore 2000', [u'the Government of Singapore 2000']), (10, 12, u'year 2000', [u'the year 2000'])]
+CORRECT EDITS : [(10, 12, u'year 2000', u'the year 2000')]
+# correct     : 2.0
+# proposed    : 6.0
+# gold        : 6.0
+precision     : 0.333333333333
+recall        : 0.333333333333
+f1            : 0.333333333333
+-------------------------------------------
+SOURCE        : This may due to the various housing schemes which resulted in this high rate of having elderly to stay with their children .
+HYPOTHESIS    : This may due to the various housing schemes which resulted in this high rate of having the elderly to stay with their children .
+EDIT SEQ      : [(14, 16, u'of having', u'of having the')]
+GOLD EDITS    : [(17, 19, u'to stay', [u'staying']), (10, 15, u'in this high rate of', [u'in a high rate of'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 7.0
+# gold        : 8.0
+precision     : 0.285714285714
+recall        : 0.25
+f1            : 0.266666666667
+-------------------------------------------
+SOURCE        : Some of the housing schemes implemented by Housing Development Board ( HDB ) include the Multi-Tier Housing Scheme , the Joint Selection Scheme , and the CPF Housing Grant Scheme ( Kalyani K. Mehta , 2002 ) .
+HYPOTHESIS    : Some of the housing schemes implemented by the Housing Development Board ( HDB ) include the Multi-Tier Housing Scheme , the Joint Selection Scheme , and the CPF Housing Grant Scheme ( Kalyani K. Mehta , 2002 ) .
+EDIT SEQ      : [(5, 7, u'implemented by', u'implemented by the')]
+GOLD EDITS    : [(7, 13, u'Housing Development Board ( HDB )', [u'the Housing Development Board ( HDB )'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 8.0
+# gold        : 9.0
+precision     : 0.25
+recall        : 0.222222222222
+f1            : 0.235294117647
+-------------------------------------------
+SOURCE        : Multi-Tier Housing Scheme is introduced to encourage married children to live together under one roof with his or her parents or vice versa .
+HYPOTHESIS    : Multi-Tier Housing Scheme is introduced to encourage married children to live together under one roof with his or her parents or vice versa .
+EDIT SEQ      : []
+GOLD EDITS    : [(0, 3, u'Multi-Tier Housing Scheme', [u'The Multi-Tier Housing Scheme'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 8.0
+# gold        : 10.0
+precision     : 0.25
+recall        : 0.2
+f1            : 0.222222222222
+-------------------------------------------
+SOURCE        : This scheme allows extended-family applicants to be given priority allocation on the flats they wanted to live in .
+HYPOTHESIS    : This scheme allows extended-family applicants to be given priority allocation on the flats they wanted to live in .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 8.0
+# gold        : 10.0
+precision     : 0.25
+recall        : 0.2
+f1            : 0.222222222222
+-------------------------------------------
+SOURCE        : The Joint Selection Scheme is that it allows families to choose the flats on priority in order for the married children and parents to stay in separate HDB flats but close together in the same neighboring town or estate ( Kalyani K. Mehta , 2002 ) .
+HYPOTHESIS    : The Joint Selection Scheme is that it allows families to choose the flats on the priority in order for the married children and parents to stay in a separate HDB flats but close together in the same neighboring towns or estate ( Kalyani K. Mehta , 2002 ) .
+EDIT SEQ      : [(34, 37, u'same neighboring town', u'same neighboring towns'), (24, 26, u'stay in', u'stay in a'), (12, 14, u'flats on', u'flats on the')]
+GOLD EDITS    : [(18, 19, u'the', [u''])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 11.0
+# gold        : 11.0
+precision     : 0.181818181818
+recall        : 0.181818181818
+f1            : 0.181818181818
+-------------------------------------------
+SOURCE        : Finally , the CFP Grant Scheme was also introduced to promote married children to live near their parents by offering a higher grant if their flat is near their parents ' home compared to those who are either staying alone or those who are not staying close to their parents .
+HYPOTHESIS    : Finally , the CFP Grant Scheme was also introduced to promote married children to live near their parents by offering a higher grant if their flat is near their parents ' home as compared to those who are either staying alone or those who are not stay close to their parents .
+EDIT SEQ      : [(43, 46, u'are not staying', u'are not stay'), (30, 32, u"' home", u"' home as")]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 13.0
+# gold        : 11.0
+precision     : 0.153846153846
+recall        : 0.181818181818
+f1            : 0.166666666667
+-------------------------------------------
+SOURCE        : Apart from these schemes , Singapore is also trying hard to create an elderly-friendly environment for instance , lifts were modified to stop on every floor , using non-slip floor tile to minimize the danger of elderly being slipped and fell , having support hand bar in toilet , alert alarm system , building of ramps and link ways to facilitate wheelchair access , and a lot more .
+HYPOTHESIS    : Apart from these schemes , Singapore is also trying hard to create an elderly-friendly environment for instance , lifts were modified to stop on every floor , using the non-slip floor tile to minimize the danger of the elderly will be slipped and fell , having support hand bars in the toilet , an alert alarm system , building of ramps and link ways to facilitate the wheelchair access , and a lot more .
+EDIT SEQ      : [(59, 61, u'to facilitate', u'to facilitate the'), (47, 49, u'toilet ,', u'the toilet , an'), (43, 46, u'support hand bar', u'support hand bars'), (36, 39, u'elderly being slipped', u'the elderly will be slipped'), (26, 28, u', using', u', using the')]
+GOLD EDITS    : [(36, 37, u'elderly', [u'elderly people']), (37, 41, u'being slipped and fell', [u'slipping and falling']), (44, 48, u'hand bar in toilet', [u'hand bars in toilets'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 18.0
+# gold        : 14.0
+precision     : 0.111111111111
+recall        : 0.142857142857
+f1            : 0.125
+-------------------------------------------
+SOURCE        : Housing Schemes and building an elderly-friendly environment would definitely make the elderly to live more comfortably and rewarding .
+HYPOTHESIS    : Housing Schemes and building of an elderly-friendly environment would definitely make the elderly to live more comfortably and rewarding .
+EDIT SEQ      : [(4, 6, u'an elderly-friendly', u'of an elderly-friendly')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 19.0
+# gold        : 14.0
+precision     : 0.105263157895
+recall        : 0.142857142857
+f1            : 0.121212121212
+-------------------------------------------
+SOURCE        : Health care policies for the aged have been getting numerous of notice in the recent few years .
+HYPOTHESIS    : Health care policies for the aged have been been numerous of a notice in the recent few years .
+EDIT SEQ      : [(8, 11, u'getting numerous of', u'been numerous of a')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 20.0
+# gold        : 14.0
+precision     : 0.1
+recall        : 0.142857142857
+f1            : 0.117647058824
+-------------------------------------------
+SOURCE        : The government has been aggressively promoting awareness of health care issues among the ageing society .
+HYPOTHESIS    : The government has been aggressively in promoting awareness of health care issues among the ageing society .
+EDIT SEQ      : [(3, 5, u'been aggressively', u'been aggressively in')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 21.0
+# gold        : 14.0
+precision     : 0.0952380952381
+recall        : 0.142857142857
+f1            : 0.114285714286
+-------------------------------------------
+SOURCE        : For instance , old folks who do not have any health care indemnity have been advised to have the Medishield accounts with support given from the government ( Chan , Angelique 2002 ) .
+HYPOTHESIS    : For instance , old folks who do not have any health care indemnity have been advised to have the Medishield account with the support given from the government ( Chan , Angelique 2002 ) .
+EDIT SEQ      : [(20, 23, u'accounts with support', u'account with the support')]
+GOLD EDITS    : [(18, 19, u'the', [u''])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 22.0
+# gold        : 15.0
+precision     : 0.0909090909091
+recall        : 0.133333333333
+f1            : 0.108108108108
+-------------------------------------------
+SOURCE        : This account permits individuals to pay for the medical bills .
+HYPOTHESIS    : This account permits individuals to pay for the medical bills .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 22.0
+# gold        : 15.0
+precision     : 0.0909090909091
+recall        : 0.133333333333
+f1            : 0.108108108108
+-------------------------------------------
+SOURCE        : Besides , the government helps in subsidizing health screening program for the senior citizen .
+HYPOTHESIS    : Besides , the government helps in subsidizing the health screening program for the senior citizen .
+EDIT SEQ      : [(5, 7, u'in subsidizing', u'in subsidizing the')]
+GOLD EDITS    : [(8, 10, u'screening program', [u'screening programs']), (11, 14, u'the senior citizen', [u'senior citizens'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 17.0
+precision     : 0.0869565217391
+recall        : 0.117647058824
+f1            : 0.1
+-------------------------------------------
+SOURCE        : A person aged over 60 is allowed to perform a basic health-screening test with just S $ 5 ( Kalyani K. Mehta , 2002 ) .
+HYPOTHESIS    : A person aged over 60 is allowed to perform a basic health-screening test with just S $ 5 ( Kalyani K. Mehta , 2002 ) .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 17.0
+precision     : 0.0869565217391
+recall        : 0.117647058824
+f1            : 0.1
+-------------------------------------------
+SOURCE        : Despite having various schemes for health care policy , there are still numerous of underprivileged senior citizens who can not afford the medical expenses especially for the prolong illnesses such as stroke and rheumatism .
+HYPOTHESIS    : Despite having various schemes for health care policy , there are still numerous of underprivileged senior citizens who can not afford the medical expenses especially for the prolong illnesses such as stroke and rheumatism .
+EDIT SEQ      : []
+GOLD EDITS    : [(13, 14, u'of', [u'']), (26, 27, u'the', [u'']), (31, 32, u'stroke', [u'strokes'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 20.0
+precision     : 0.0869565217391
+recall        : 0.1
+f1            : 0.093023255814
+-------------------------------------------
+SOURCE        : Thus the Medifund was established to provide aid for those who are unable to pay for healthcare services ( as cited in Ministry of Health , Singapore ) .
+HYPOTHESIS    : Thus the Medifund was established to provide aid for those who are unable to pay for healthcare services ( as cited in Ministry of Health , Singapore ) .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 20.0
+precision     : 0.0869565217391
+recall        : 0.1
+f1            : 0.093023255814
+-------------------------------------------
+SOURCE        : Needy patients are hence able to apply and use this fund to pay for their healthcare services .
+HYPOTHESIS    : Needy patients are hence able to apply and use this fund to pay for their healthcare services .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 20.0
+precision     : 0.0869565217391
+recall        : 0.1
+f1            : 0.093023255814
+-------------------------------------------
+SOURCE        : In general , healthcare policies have been contributing a lot to meet the needs of the 'aged Singaporeans' .
+HYPOTHESIS    : In general , healthcare policies have been contributing a lot to meet the needs of the 'aged Singaporeans' .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 23.0
+# gold        : 20.0
+precision     : 0.0869565217391
+recall        : 0.1
+f1            : 0.093023255814
+-------------------------------------------
+SOURCE        : Last but not least , it is important to make the elderly an asset to the society in Singapore by giving those physically well senior citizens the opportunity to work .
+HYPOTHESIS    : Last but not least , it is important to make the elderly as an asset to the society in Singapore by giving the physically well as senior citizens for the opportunity to work .
+EDIT SEQ      : [(25, 27, u'citizens the', u'citizens for the'), (21, 24, u'those physically well', u'the physically well as'), (10, 12, u'the elderly', u'the elderly as')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 26.0
+# gold        : 20.0
+precision     : 0.0769230769231
+recall        : 0.1
+f1            : 0.0869565217391
+-------------------------------------------
+SOURCE        : Government has started to put emphasis on the re- training of the older workers to work more efficiently and productively ( Chan , Angelique 2002 ) .
+HYPOTHESIS    : Government has started to put emphasis on the re- training of the older workers to work more efficiently and productively ( Chan , Angelique 2002 ) .
+EDIT SEQ      : []
+GOLD EDITS    : [(0, 1, u'Government', [u'The government'])]
+CORRECT EDITS : []
+# correct     : 2.0
+# proposed    : 26.0
+# gold        : 21.0
+precision     : 0.0769230769231
+recall        : 0.0952380952381
+f1            : 0.0851063829787
+-------------------------------------------
+SOURCE        : Not only that , government also extended the retirement age of the individuals .
+HYPOTHESIS    : Not only that , the government also extended the retirement age of the individuals .
+EDIT SEQ      : [(4, 5, u'government', u'the government')]
+GOLD EDITS    : [(4, 5, u'government', [u'the government']), (11, 12, u'the', [u''])]
+CORRECT EDITS : [(4, 5, u'government', u'the government')]
+# correct     : 3.0
+# proposed    : 27.0
+# gold        : 23.0
+precision     : 0.111111111111
+recall        : 0.130434782609
+f1            : 0.12
+-------------------------------------------
+SOURCE        : These permit the aged population to continue serving the society and also in certain ways help to build confidence in the elderly .
+HYPOTHESIS    : These permit the aged population to continue serving the society and also in certain ways to help to build the confidence in the elderly .
+EDIT SEQ      : [(16, 18, u'to build', u'to build the'), (13, 15, u'certain ways', u'certain ways to')]
+GOLD EDITS    : [(1, 2, u'permit', [u'permits']), (8, 10, u'the society', [u'society']), (15, 16, u'help', [u'helps'])]
+CORRECT EDITS : []
+# correct     : 3.0
+# proposed    : 29.0
+# gold        : 26.0
+precision     : 0.103448275862
+recall        : 0.115384615385
+f1            : 0.109090909091
+-------------------------------------------
+SOURCE        : In conclusion , Singapore government has seriously looked into the needs of the senior citizens and the challenges faced in terms of aging population by implementing policies to ease the aging process .
+HYPOTHESIS    : In conclusion , the Singapore government has seriously looked into the needs of the senior citizens and the challenges faced in terms of an aging population by implementing policies to ease the aging process .
+EDIT SEQ      : [(20, 22, u'terms of', u'terms of an'), (3, 5, u'Singapore government', u'the Singapore government')]
+GOLD EDITS    : [(3, 5, u'Singapore government', [u'the Singapore government']), (12, 13, u'the', [u'its'])]
+CORRECT EDITS : [(3, 5, u'Singapore government', u'the Singapore government')]
+# correct     : 4.0
+# proposed    : 31.0
+# gold        : 28.0
+precision     : 0.129032258065
+recall        : 0.142857142857
+f1            : 0.135593220339
+-------------------------------------------
+SOURCE        : References
+HYPOTHESIS    : References
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 31.0
+# gold        : 28.0
+precision     : 0.129032258065
+recall        : 0.142857142857
+f1            : 0.135593220339
+-------------------------------------------
+SOURCE        : Government of Singapore .
+HYPOTHESIS    : Government of Singapore .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 31.0
+# gold        : 28.0
+precision     : 0.129032258065
+recall        : 0.142857142857
+f1            : 0.135593220339
+-------------------------------------------
+SOURCE        : Singapore Census of Population .
+HYPOTHESIS    : Singapore Census of Population .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 31.0
+# gold        : 28.0
+precision     : 0.129032258065
+recall        : 0.142857142857
+f1            : 0.135593220339
+-------------------------------------------
+SOURCE        : Advanced Data Release no .
+HYPOTHESIS    : Advanced Data Release of no .
+EDIT SEQ      : [(3, 5, u'no .', u'of no .')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 32.0
+# gold        : 28.0
+precision     : 0.125
+recall        : 0.142857142857
+f1            : 0.133333333333
+-------------------------------------------
+SOURCE        : 6 , 2000a .
+HYPOTHESIS    : 6 , 2000a .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 32.0
+# gold        : 28.0
+precision     : 0.125
+recall        : 0.142857142857
+f1            : 0.133333333333
+-------------------------------------------
+SOURCE        : Singapore 's Changing , Structure and the Policy , Implications for Financial , Security , Employment , Living Arrangements and Health Care .
+HYPOTHESIS    : Singapore 's Changing , the Structure and the Policy , Implications for Financial , Security , Employment , Living Arrangements and Health Care .
+EDIT SEQ      : [(4, 6, u'Structure and', u'the Structure and')]
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : ASIAN METACENTRE RESEARCH PAPER SERIES .
+HYPOTHESIS    : ASIAN METACENTRE RESEARCH PAPER SERIES .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : Retrieved September 15 , 2009 from http : //www.populationasia.org/Publications/RP/AMCRP3.pdf
+HYPOTHESIS    : Retrieved September 15 , 2009 from http : //www.populationasia.org/Publications/RP/AMCRP3.pdf
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : National Policies on Ageing and Long-term Care in Singapore .
+HYPOTHESIS    : National Policies on Ageing and Long-term Care in Singapore .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : A Case of Cautious Wisdom ?
+HYPOTHESIS    : A Case of Cautious Wisdom ?
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : Retrieved September 15 , 2009 from http : //www.idrc.ca/en/ev-28477-201-1-DO_TOPIC.html
+HYPOTHESIS    : Retrieved September 15 , 2009 from http : //www.idrc.ca/en/ev-28477-201-1-DO_TOPIC.html
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : Ministry of Health , Singapore .
+HYPOTHESIS    : Ministry of Health , Singapore .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : Electronic References .
+HYPOTHESIS    : Electronic References .
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+SOURCE        : Retrieved September 15 , 2009 from http : //www.moh.gov.sg/mohcorp/hcfinancing.aspx ? id = 308
+HYPOTHESIS    : Retrieved September 15 , 2009 from http : //www.moh.gov.sg/mohcorp/hcfinancing.aspx ? id = 308
+EDIT SEQ      : []
+GOLD EDITS    : []
+CORRECT EDITS : []
+# correct     : 4.0
+# proposed    : 33.0
+# gold        : 28.0
+precision     : 0.121212121212
+recall        : 0.142857142857
+f1            : 0.131147540984
+-------------------------------------------
+CORRECT EDITS  : 4.0
+PROPOSED EDITS : 33.0
+GOLD EDITS     : 28.0
+P = 0.121212121212
+R = 0.142857142857
+F1 = 0.131147540984
+Precision   : 0.1212
+Recall      : 0.1429
+F1          : 0.1311
