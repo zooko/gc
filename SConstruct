@@ -82,15 +82,24 @@ def training_m2_5_to_gold(target, source, env):
          ):
          GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
 
+class BuildFailure(Exception):
+    pass
+
 def merge_external_corpus(target, source, env):
 
     train_gold_file_obj = open_with_unicode(source[0].path, None, 'r')
-    external_corpus_file_obj = open_with_unicode(source[1].path, None, 'r')
+    external_corpus_file_obj = open_with_unicode(source[1].path, 'bzip2', 'r')
     merged_corpus_file_obj = open_with_unicode(target[0].path, None, 'w')
-    for line in external_corpus_file_obj:
-        merged_corpus_file_obj.write(line)
-    for line in train_gold_file_obj:
-        merged_corpus_file_obj.write(line)
+    try:
+        for line in external_corpus_file_obj:
+                merged_corpus_file_obj.write(line)
+    except (EnvironmentError, UnicodeDecodeError), e:
+        raise BuildFailure(e, external_corpus_file_obj)
+    try:
+        for line in train_gold_file_obj:
+            merged_corpus_file_obj.write(line)
+    except (EnvironmentError, UnicodeDecodeError), e:
+        raise BuildFailure(e, external_corpus_file_obj)
 
 def create_vocabularies(target, source, env):
     """
@@ -448,7 +457,7 @@ except:
 try:
     external_corpus = str([x[1] for x in ARGLIST if x[0] == 'external_corpus'][0])
 except:
-    external_corpus = 'segmented_tokenised_corpus_section'
+    external_corpus = 'segmented_tokenised_corpus_section.bz2'
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
@@ -481,7 +490,7 @@ env.training_gold([data_directory + 'training_set_gold', data_directory + 'inser
 
 env.Alias('training_gold', [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'])
 
-env.merge_external_corpus([data_directory + 'merged_training_corpora'], [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section'])
+env.merge_external_corpus([data_directory + 'merged_training_corpora'], [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
 
 env.Alias('merged_corpus', [data_directory + 'merged_training_corpora'])
 
@@ -501,10 +510,10 @@ env.pos_ngram_models([data_directory + 'pos_ngram_model.arpa', data_directory + 
 
 env.Alias('pos_ngram_models', [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'])
 
-env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
-env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) for size in vocabulary_sizes])
+env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
 
-env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes])
+env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
 
-env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) for size in vocabulary_sizes])
+env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
