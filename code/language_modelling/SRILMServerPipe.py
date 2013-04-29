@@ -7,11 +7,14 @@ class SRILMServerPipe:
     def __init__(self, port_number, model_path, order, unk=True):
         if unk:
             try:
-                self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=-1)
+                self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=open('logging' + str(time.time()), 'w'))
             except EnvironmentError, e:
                 raise EnvironmentError(e, ('ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'))
         else:
-            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'], stderr=-1)
+            try:
+                self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'], stderr=open('logging' + str(time.time()), 'w'))
+            except EnvironmentError, e:
+                raise EnvironmentError(e, ('ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'))
         time.sleep(3)
 
         self.srilm_server_pipe = telnetlib.Telnet('localhost', port_number)
