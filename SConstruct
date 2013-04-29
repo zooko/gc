@@ -8,15 +8,13 @@ del sys.modules['pickle']
 
 import os
 
-import nltk
-
 from contextlib import nested
 
 import codecs, contextlib, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
-from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
+from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe, NLTKTagger
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
 from code.correction import VariationProposer, Corrector
 
@@ -148,7 +146,12 @@ def get_pos_data(target, source, env):
     Creates pos_dictionary, POS training sets, pos_ngram_model.arpa, closed_class_pos_ngram_model.arpa
     '''
 
-    tagger_pipe = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
+    if taggerimpl == 'stanford':
+        tagger = StanfordTaggerPipe.StanfordTaggerPipe(data_directory + 'tagger.jar', module_path, data_directory + 'tagger')
+    elif taggerimpl == 'nltk':
+        tagger = NLTKTagger.NLTKTagger()
+    else:
+        raise Exception("no taggerimpl")
 
     merged_corpus_file_obj = open_with_unicode(source[0].path, None, 'r')
     with nested(
@@ -165,7 +168,7 @@ def get_pos_data(target, source, env):
         for line in merged_corpus_file_obj:
             if not line_number % 100:
                 print '.',
-            words_and_tags = tagger_pipe.words_and_tags_list(line.strip())
+            words_and_tags = tagger.words_and_tags_list(line.strip())
             for w, t in words_and_tags:
                 pos_training_file_obj.write(t + u' ')
                 if t in closed_class_tags or w.lower() in AUX:
@@ -458,6 +461,11 @@ try:
     external_corpus = str([x[1] for x in ARGLIST if x[0] == 'external_corpus'][0])
 except:
     external_corpus = 'segmented_tokenised_corpus_section.bz2'
+
+try:
+    taggerimpl = [x[1].lower() for x in ARGLIST if x[0] == 'tagger'][0]
+except:
+    taggerimpl = 'stanford'
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
