@@ -5,7 +5,10 @@ import os, subprocess, codecs
 
 class StanfordTaggerPipe:
     def __init__(self, stanford_tagger_path, module_path, model_path):
-        self.tagger_pipe = subprocess.Popen(['java', '-mx1g', '-cp', stanford_tagger_path, module_path, '-model', model_path, '-tokenize', 'false' ], stdin=-1, stdout=-1)
+        try:
+            self.tagger_pipe = subprocess.Popen(['java', '-mx1g', '-cp', stanford_tagger_path, module_path, '-model', model_path, '-tokenize', 'false' ], stdin=-1, stdout=-1)
+        except EnvironmentError, e:
+            raise EnvironmentError(e, ('java', '-mx1g', '-cp', stanford_tagger_path, module_path, '-model', model_path, '-tokenize', 'false'))
         self.stdin_byte_writer = codecs.getwriter('utf-8')(self.tagger_pipe.stdin)
         self.stdout = self.tagger_pipe.stdout
 

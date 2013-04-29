@@ -1,12 +1,15 @@
 # L. Amber Wilcox-O'Hearn 2013
 # SRILMServerPipe.py
 
-import os, subprocess, codecs, time, telnetlib
+import os, subprocess, time, telnetlib
 
 class SRILMServerPipe:
     def __init__(self, port_number, model_path, order, unk=True):
         if unk:
-            self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=-1)
+            try:
+                self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'], stderr=-1)
+            except EnvironmentError, e:
+                raise EnvironmentError(e, ('ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-unk', '-debug', '4'))
         else:
             self.srilm_server = subprocess.Popen(['ngram', '-order', order, '-lm', model_path, '-server-port', port_number, '-debug', '4'], stderr=-1)
         time.sleep(3)
