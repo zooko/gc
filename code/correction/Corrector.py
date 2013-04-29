@@ -126,7 +126,7 @@ class Corrector():
            if self.verbose:
                print "Submitting to trigram model:", word1, word2, word3
 
-           result = self.trigram_model_pipe.trigram_probability([word1, word2, word3])
+           result = self.trigram_model_pipe.trigram_probability(word1, word2, word3)
 
            if self.verbose:
                print "And got:", result

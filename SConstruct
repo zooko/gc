@@ -8,13 +8,11 @@ del sys.modules['pickle']
 
 import os
 
-import nltk
-
 from contextlib import nested
 
-import codecs, contextlib, bz2, gzip, random, subprocess, json
+import codecs, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
-from BackOffTrigramModel import BackOffTrigramModelPipe
+import BackOffTrigramModel
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
@@ -226,8 +224,6 @@ def statprof_correct(target, source, env):
 def real_correct(target, source, env):
 
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
-    insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
-    deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
     pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8989', source[4].path, '5')
     closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('9898', source[5].path, '5')
 
@@ -237,7 +233,7 @@ def real_correct(target, source, env):
     tmpipe_objs = []
     try:
         for i in range(len(vocabulary_sizes)):
-            tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
+            tmpipe_obj = BackOffTrigramModel.BackOffTMCFFI(source[i+6].path)
             tmpipe_objs.append(tmpipe_obj)
             var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
             variation_proposers.append(var_gen)
@@ -458,6 +454,11 @@ try:
     external_corpus = str([x[1] for x in ARGLIST if x[0] == 'external_corpus'][0])
 except:
     external_corpus = 'segmented_tokenised_corpus_section.bz2'
+
+# try:
+#     botmimpl = [x[1].lower() for x in ARGLIST if x[0] == 'botm'][0]
+# except:
+#     botmimpl = 'botmpipe'
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True

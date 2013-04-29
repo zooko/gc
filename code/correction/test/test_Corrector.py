@@ -3,7 +3,6 @@
 
 from code.language_modelling import SRILMServerPipe
 from code.correction import Corrector, VariationProposer
-from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest, json
 
 def probability_of_error_function():
@@ -22,7 +21,6 @@ def variation_generator(tagged_sentence):
 def path_probability_function(tagged_tokens):
     tokens = [t[0] for t in tagged_tokens]
     num_a_s = tokens[-1].count('a')
-    num_periods = tokens.count(['.'])
     if len(tokens) > 3 and tokens[1] == 'isd':
         return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
     return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
@@ -33,7 +31,17 @@ model_path = 'stanford-tagger/english-left3words-distsim.tagger'
 closed_class_tags = ['IN', 'DT', 'TO', 'MD']
 AUX = ['be', 'is', 'are', 'were', 'was', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'get', 'got', 'getting']
 
+BOTMCFFI=True
+
 class CorrectorTest(unittest.TestCase):
+
+    def setUp(self):
+        if BOTMCFFI:
+            from BackOffTrigramModel import BackOffTrigramModelCFFI
+
+            self.botm = BackOffTrigramModelCFFI.BackOffTMCFFI('code/correction/test/trigram_model_5K.arpa')
+        else:
+            raise "Whatever"
 
     def test_beam_search(self):
 
@@ -53,10 +61,9 @@ class CorrectorTest(unittest.TestCase):
 
     def test_ngram_path_probability(self):
 
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        corrector = Corrector.Corrector(tmpipe_obj, 25, var_gen.generate_path_variations, -1.3)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
+        corrector = Corrector.Corrector(self.botm, 25, var_gen.generate_path_variations, -1.3)
 
         tokens = u'The I over'.split()
         tpp = corrector.ngram_path_probability(tokens)
@@ -64,35 +71,33 @@ class CorrectorTest(unittest.TestCase):
 
     def test_pos_ngram_path_probability(self):
 
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('7878', 'code/correction/test/pos_trigram_model_0K.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
 
         tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
 
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=1.0, pos_ngram_server_obj=pos_ngram_server_obj)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=1.0, pos_ngram_server_obj=pos_ngram_server_obj)
         ptpp = corrector.pos_ngram_path_probability(tagged_tokens)
         self.assertAlmostEqual(ptpp, -0.230294, msg=repr(ptpp))
 
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
         ptpp = corrector.pos_ngram_path_probability(tagged_tokens)
         self.assertAlmostEqual(ptpp, -0.7838715, msg=repr(ptpp))
 
     def test_closed_class_pos_ngram_path_probability(self):
 
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('1234', 'code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
 
         tagged_tokens = [(u'An', u'DT'), (u'elderly', u'JJ'), (u'person', u'NN')]
 
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=1.0, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=1.0, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
         ptpp = corrector.closed_class_pos_ngram_path_probability(tagged_tokens)
         self.assertAlmostEqual(ptpp, -0.111492, msg=repr(ptpp))
 
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
         ptpp = corrector.closed_class_pos_ngram_path_probability(tagged_tokens)
         self.assertAlmostEqual(ptpp, -0.7244705, msg=repr(ptpp))
 
@@ -102,10 +107,9 @@ class CorrectorTest(unittest.TestCase):
         together, not of the correctness of results.
         '''
 
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3)
 
         tagged_sentence = [('I', 'PRP'), ('agree', 'VBP'), ('to', 'TO'), ('a', 'DT'), ('large', 'JJ'),('extent', 'NN'), ('that', 'IN'), ('current', 'JJ'), ('policies', 'NNS'), ('have', 'VBP'), ('helped', 'VBN'), ('to', 'TO'), ('ease', 'VB'), ('the', 'DT'), ('aging', 'NN'), ('process', 'NN'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
@@ -114,10 +118,9 @@ class CorrectorTest(unittest.TestCase):
     def test_pos_correction(self):
 
         pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8488', 'code/correction/test/pos_5-gram.arpa', '5')
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
@@ -129,11 +132,10 @@ class CorrectorTest(unittest.TestCase):
 
     def test_closed_class_pos_correction(self):
 
-        tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('5888', 'code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
-        var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
+        var_gen = VariationProposer.VariationProposer(pos_dictionary, self.botm)
+        corrector = Corrector.Corrector(self.botm, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)

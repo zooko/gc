@@ -2,8 +2,8 @@
 # test_VariationProposer.py
 
 from code.correction import VariationProposer
-from collections import defaultdict, Counter
-from BackOffTrigramModel import BackOffTrigramModelPipe
+from collections import defaultdict
+import BackOffTrigramModel
 import unittest
 
 tag_dictionary = defaultdict(dict)
@@ -25,11 +25,19 @@ def vocab_with_prefix(prefix):
         return ['am', 'are', 'bad', 'cue', 'did', 'is']
     return []
 
-tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
-
-proposer = VariationProposer.VariationProposer(tag_dictionary, tmpipe_obj)
+BOTMCFFI=True
 
 class VariationProposerTest(unittest.TestCase):
+
+    def setUp(self):
+        if BOTMCFFI:
+            from BackOffTrigramModel import BackOffTrigramModelCFFI
+
+            self.botm = BackOffTrigramModelCFFI.BackOffTMCFFI('code/correction/test/trigram_model_5K.arpa')
+        else:
+            raise "Whatever"
+
+        self.proposer = VariationProposer.VariationProposer(tag_dictionary, self.botm)
 
     def test_closed_class_alternatives(self):
 
@@ -37,16 +45,16 @@ class VariationProposerTest(unittest.TestCase):
         tokens = sentence.split()
         tags = ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
-        proposed = proposer.get_alternatives(tokens[0], tags[0])
+        proposed = self.proposer.get_alternatives(tokens[0], tags[0])
         self.assertSetEqual(set(proposed), set([]), proposed)
 
-        proposed = proposer.get_alternatives(tokens[1], tags[1])
+        proposed = self.proposer.get_alternatives(tokens[1], tags[1])
         self.assertSetEqual(set(proposed), set([('love', 'VB')]), proposed)
 
-        proposed = proposer.get_alternatives(tokens[2], tags[2])
+        proposed = self.proposer.get_alternatives(tokens[2], tags[2])
         self.assertSetEqual(set(proposed), set([("from", 'IN'), ("of", 'IN'), ()]), proposed)
 
-        proposed = proposer.get_alternatives(tokens[3], tags[3])
+        proposed = self.proposer.get_alternatives(tokens[3], tags[3])
         self.assertSetEqual(set(proposed), set([("the", 'DT'), ("any", 'DT'), ("this", 'DT'), ("an", "DT"), ()]), proposed)
 
     def test_generate_path_variations(self):
@@ -54,7 +62,7 @@ class VariationProposerTest(unittest.TestCase):
         tagged_sentence = [('We', 'PRP'), ('loved', 'VBD'), ('with', 'IN')]
         beginning = tagged_sentence[:-1]
 
-        path_variations = proposer.generate_path_variations(tagged_sentence)
+        path_variations = self.proposer.generate_path_variations(tagged_sentence)
         self.assertEquals(len(path_variations), 36, str(path_variations) + ": " + str(len(path_variations)))
         self.assertIn(beginning, path_variations, path_variations)
         self.assertIn(beginning + [('a', 'DT'), ('from', 'IN')], path_variations, path_variations)
@@ -72,11 +80,11 @@ class VariationProposerTest(unittest.TestCase):
         self.assertNotIn(beginning + [('with', 'IN')], path_variations, path_variations)
 
         tagged_sentence = [('We', 'PRP')]
-        path_variations = proposer.generate_path_variations(tagged_sentence)
+        path_variations = self.proposer.generate_path_variations(tagged_sentence)
         self.assertIn([('Of', 'IN'), ('we', 'PRP')], path_variations, path_variations)
 
         tagged_sentence = [('Of', 'IN')]
-        path_variations = proposer.generate_path_variations(tagged_sentence)
+        path_variations = self.proposer.generate_path_variations(tagged_sentence)
         self.assertIn([('Of', 'IN'), ('of', 'IN')], path_variations, path_variations)
         self.assertIn([('From', 'IN'), ('of', 'IN')], path_variations, path_variations)
         self.assertIn([('From', 'IN')], path_variations, path_variations)
