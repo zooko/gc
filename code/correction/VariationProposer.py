@@ -29,20 +29,6 @@ class VariationProposer():
                'was': 'VBD',
                'were': 'VBD'}
         closed_class_tags = ['IN', 'DT', 'TO', 'MD']
-#        self.closed_class_preceder_tokens = set([])
-#        for token in [i for i in insertables if tmpipe_obj.in_vocabulary(i)]:
-#            for tag in closed_class_tags:
-#                if token in tag_dictionary[tag]:
-#                    self.closed_class_preceder_tokens.add((token, tag))
-#                elif token in self.AUX.keys():
-#                    self.closed_class_preceder_tokens.add((token, self.AUX[token]))
-#        self.closed_class_deletables = set([])
-#        for token in [d for d in deletables if tmpipe_obj.in_vocabulary(d)]:
-#            for tag in closed_class_tags:
-#                if token in tag_dictionary[tag]:
-#                    self.closed_class_deletables.add((token, tag))
-#                elif token in self.AUX.keys():
-#                    self.closed_class_deletables.add((token, self.AUX[token]))
 
         self.closed_class_substitutables = {}
         for tag in closed_class_tags:
