@@ -537,3 +537,11 @@ env.Alias('scores', scores_targets)
 
 env.integrated_scores([data_directory + 'integrated_scores'], scores_targets)
 env.Alias('integrated_scores', [data_directory + 'integrated_scores'])
+
+# Tell scons to put a db file (".sconsign.dblite") into each directory
+# to track the files in that directory rather than a single db file in
+# the top-level directory. This is important to avoid write-collisions
+# by concurrent scons processes from destroying the db file and
+# causing everything to rebuild the next time scons runs.
+
+env.SConsignFile(None)
