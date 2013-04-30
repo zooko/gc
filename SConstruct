@@ -123,7 +123,7 @@ def create_vocabularies(target, source, env):
             for i in range(len(vocabulary_sizes))[1:]:
                 size = vocabulary_sizes[i]
                 vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
-                assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
+                assert os.path.normpath(target[i].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
                 vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
                 for line in base_vocabulary[:int(float(size)*1000)]:
                     vocabulary_file_obj.write(line)
@@ -537,3 +537,11 @@ env.Alias('scores', scores_targets)
 
 env.integrated_scores([data_directory + 'integrated_scores'], scores_targets)
 env.Alias('integrated_scores', [data_directory + 'integrated_scores'])
+
+# Tell scons to put a db file (".sconsign.dblite") into each directory
+# to track the files in that directory rather than a single db file in
+# the top-level directory. This is important to avoid write-collisions
+# by concurrent scons processes from destroying the db file and
+# causing everything to rebuild the next time scons runs.
+
+env.SConsignFile(None)
