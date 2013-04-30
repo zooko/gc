@@ -9,6 +9,7 @@ class VariationProposer():
     def __init__(self, tag_dictionary, tmpipe_obj):
         self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
         self.tag_dictionary = defaultdict(list)
+        self.tmpipe_obj = tmpipe_obj
         for tag, token_count_dict in tag_dictionary.iteritems():
             self.tag_dictionary[tag] = token_count_dict.keys()
         self.AUX = {'are': 'VBP',
@@ -35,14 +36,13 @@ class VariationProposer():
             counter = Counter(tag_dictionary[tag])
             self.closed_class_substitutables[tag] = dict(counter.most_common(5)).keys()
 
-        self.closed_class_preceder_tokens = set([])
-        self.closed_class_deletables = set([])
+        self.closed_class_preceder_tokens = set([(k,v) for k,v in self.AUX.iteritems() if self.tmpipe_obj.in_vocabulary(k)])
+        self.closed_class_deletables = set([(k,v) for k,v in self.AUX.iteritems() if self.tmpipe_obj.in_vocabulary(k)])
         for tag in self.closed_class_substitutables.keys():
             for token in self.closed_class_substitutables[tag]:
                 self.closed_class_preceder_tokens.add( (token, tag) )
                 self.closed_class_deletables.add( (token, tag) )
 
-        self.tmpipe_obj = tmpipe_obj
         self.cache = OrderedDict()
         self.cache_size = 500
         self.cache_stats = [0,0]

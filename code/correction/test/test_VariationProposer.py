@@ -55,7 +55,7 @@ class VariationProposerTest(unittest.TestCase):
         beginning = tagged_sentence[:-1]
 
         path_variations = proposer.generate_path_variations(tagged_sentence)
-        self.assertEquals(len(path_variations), 36, str(path_variations) + ": " + str(len(path_variations)))
+        self.assertEquals(len(path_variations), 87, str(path_variations) + ": " + str(len(path_variations)))
         self.assertIn(beginning, path_variations, path_variations)
         self.assertIn(beginning + [('a', 'DT'), ('from', 'IN')], path_variations, path_variations)
         self.assertIn(beginning + [('a', 'DT'), ('of', 'IN')], path_variations, path_variations)
