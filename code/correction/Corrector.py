@@ -21,7 +21,10 @@ def beam_search(tagged_tokens, width, prob_of_err, path_prob_func, variation_gen
             path_avg_word_log_prob, path_tuples = path
             total_log_prob = path_avg_word_log_prob * len(path_tuples)
 
-            path_with_next_original_token = path_tuples + [tagged_tokens[i]]
+            if path_tuples == [] and tagged_tokens[i][0].islower():
+                path_with_next_original_token = path_tuples + [(tagged_tokens[i][0].title(), tagged_tokens[i][1])]
+            else:
+                path_with_next_original_token = path_tuples + [tagged_tokens[i]]
             if verbose:
                 print "Here I am with next token:", path_with_next_original_token
 
