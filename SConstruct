@@ -228,8 +228,8 @@ def real_correct(target, source, env):
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
     insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
-    pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8989', source[4].path, '5')
-    closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('9898', source[5].path, '5')
+    pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[4].path, '5')
+    closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[5].path, '5')
 
     variation_proposers = []
     correctors = []
