@@ -123,7 +123,7 @@ def create_vocabularies(target, source, env):
             for i in range(len(vocabulary_sizes))[1:]:
                 size = vocabulary_sizes[i]
                 vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
-                assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
+                assert os.path.normpath(target[i].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
                 vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
                 for line in base_vocabulary[:int(float(size)*1000)]:
                     vocabulary_file_obj.write(line)
