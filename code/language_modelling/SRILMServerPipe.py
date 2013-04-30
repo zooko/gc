@@ -33,7 +33,7 @@ class SRILMServerPipe:
             import sys
             sys.stderr.write(errmsg)
             sys.stderr.write('\n')
-            raise errmsg
+            raise EnvironmentError(errmsg)
 
         self.srilm_server_pipe = telnetlib.Telnet('localhost', port_number)
         self.srilm_server_pipe.read_until('probserver ready\n')
