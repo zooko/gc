@@ -6,8 +6,8 @@ from code.correction import Corrector, VariationProposer
 from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest, json
 
-def probability_of_error_function():
-    return 0.01
+probability_of_error = 0.01
+
 def variation_generator(tagged_sentence):
     tokens = [t[0] for t in tagged_sentence]
     tags = [t[1] for t in tagged_sentence]
@@ -40,15 +40,15 @@ class CorrectorTest(unittest.TestCase):
         tagged_sentence = [('This', 'DT'), ('is', 'VBZ'), ('a', 'DT'), ('bad', 'JJ'), ('sentence', 'NN'), ('.', '.')]
 
         width = 5
-        result = Corrector.beam_search(tagged_sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        result = Corrector.beam_search(tagged_sentence, width, probability_of_error, path_probability_function, variation_generator)
         self.assertListEqual(result, [('This', 'DT'), ('isa', 'VBZ'), ('aa', 'DT'), ('bad', 'JJ'), ('sentence', 'NN')], result)
 
         width = 50
-        result = Corrector.beam_search(tagged_sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        result = Corrector.beam_search(tagged_sentence, width, probability_of_error, path_probability_function, variation_generator)
         self.assertListEqual(result, [('This', 'DT'), ('isd', 'VBZ'), ('aa', 'DT'), ('bad', 'JJ'), ('sentence', 'NN')], result)
 
         tagged_sentence = [('This', 'DT'), ('is', 'VBZ'), ('n\'t', 'RB'), ('bad', 'JJ'), ('...', ':')]
-        result = Corrector.beam_search(tagged_sentence, width, probability_of_error_function, path_probability_function, variation_generator)
+        result = Corrector.beam_search(tagged_sentence, width, probability_of_error, path_probability_function, variation_generator)
         self.assertListEqual(result, [('This', 'DT'), ('isd', 'VBZ'), ("n't", 'RB'), ('bad', 'JJ'), ('...', ':')], result)
 
     def test_ngram_path_probability(self):

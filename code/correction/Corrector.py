@@ -1,7 +1,7 @@
 # L. Amber Wilcox-O'Hearn 2013
 # Corrector.py
 
-def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variation_generator, verbose=False):
+def beam_search(tagged_tokens, width, prob_of_err, path_prob_func, variation_generator, verbose=False):
     """
     tagged_tokens is a list of tuples of tokens and tags.
     For each tuple in tagged_tokens, put all variations on every
@@ -45,7 +45,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
 
                     # If this was not the first word:
                     if len(path_variation) > 0:
-                        avg_word_prob = (total_log_prob + prob_of_err_func()) / len(path_variation)
+                        avg_word_prob = (total_log_prob + prob_of_err) / len(path_variation)
                         if verbose:
                             print "Here's my new avg-word prob:", avg_word_prob
 
@@ -71,7 +71,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
                     else:
                         number_of_errors = 2
 
-                    avg_word_prob = (total_log_prob + insertion_prob + next_word_prob + number_of_errors * prob_of_err_func()) / len(path_variation)
+                    avg_word_prob = (total_log_prob + insertion_prob + next_word_prob + number_of_errors * prob_of_err) / len(path_variation)
                     if verbose:
                         print "Here's my per-word prob:", avg_word_prob
 
@@ -81,7 +81,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
                     if verbose:
                         print "And here's my next_word_prob:", next_word_prob
 
-                    avg_word_prob = (total_log_prob + next_word_prob + prob_of_err_func()) / len(path_variation)
+                    avg_word_prob = (total_log_prob + next_word_prob + prob_of_err) / len(path_variation)
                     if verbose:
                         print "Here's my per-word prob:", avg_word_prob
 
@@ -109,9 +109,6 @@ class Corrector():
         self.closed_class_pos_ngram_server_obj = closed_class_pos_ngram_server_obj
         self.closed_class_tags = closed_class_tags
         self.AUX = AUX
-
-    def get_error_prob(self):
-       return self.error_prob
 
     def ngram_path_probability(self, path, pipe='t'):
        '''
@@ -200,7 +197,7 @@ class Corrector():
 
         if self.closed_class:
             assert not self.pos, "POS and closed class models can't both be set."
-            return beam_search(tokens, self.width, self.get_error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
+            return beam_search(tokens, self.width, self.error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
 
-        return beam_search(tokens, self.width, self.get_error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
+        return beam_search(tokens, self.width, self.error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
 
