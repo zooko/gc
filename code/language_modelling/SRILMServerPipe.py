@@ -28,6 +28,12 @@ class SRILMServerPipe:
                 except EnvironmentError, e:
                     raise EnvironmentError(e, ('ngram', '-order', order, '-lm', model_path, '-server-port', port_number))
         time.sleep(3)
+        if self.srilm_server.poll() is not None:
+            errmsg = "FAILURE: the SRILM server subprocess has already terminated, 3 seconds after we started it. Perhaps it couldn't bind to port %s because another process is already using that port. Enable debug-mode of the SRILMServerPipe object and try again to learn more." % (port_number,)
+            import sys
+            sys.stderr.write(errmsg)
+            sys.stderr.write('\n')
+            raise errmsg
 
         self.srilm_server_pipe = telnetlib.Telnet('localhost', port_number)
         self.srilm_server_pipe.read_until('probserver ready\n')
