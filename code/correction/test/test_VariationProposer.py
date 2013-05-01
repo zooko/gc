@@ -34,10 +34,10 @@ class VariationProposerTest(unittest.TestCase):
     def test_dicts(self):
 
         self.assertDictEqual(proposer.closed_class_substitutables,
-                             {'MD': [(u'could', 'MD'), (u'might', 'MD'), ()],
-                              'DT': [(u'the', 'DT'), (u'an', 'DT'), (u'a', 'DT'), (u'this', 'DT'), (u'any', 'DT'), ()],
-                              'AUX': [(u'be', 'VB'), (u'have', 'VB'), (u'to', 'TO'), ()],
-                              'IN': [(u'with', 'IN'), (u'from', 'IN'), (u'of', 'IN'), (u'to', 'TO'), ()]},
+                             {'MD': frozenset([(u'could', 'MD'), (u'might', 'MD'), ()]),
+                              'DT': frozenset([(u'the', 'DT'), (u'an', 'DT'), (u'a', 'DT'), (u'this', 'DT'), (u'any', 'DT'), ()]),
+                              'AUX': frozenset([(u'be', 'VB'), (u'have', 'VB'), (u'to', 'TO'), ()]),
+                              'IN': frozenset([(u'with', 'IN'), (u'from', 'IN'), (u'of', 'IN'), (u'to', 'TO'), ()])},
                              proposer.closed_class_substitutables)
 
     def test_closed_class_alternatives(self):
