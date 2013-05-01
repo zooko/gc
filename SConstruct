@@ -82,7 +82,7 @@ def training_m2_5_to_gold(target, source, env):
          ):
          GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
 
-class Buildfailure(Exception):
+class BuildFailure(Exception):
     pass
 
 def merge_external_corpus(target, source, env):
@@ -230,40 +230,43 @@ def real_correct(target, source, env):
     deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
     pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[4].path, '5')
     closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[5].path, '5')
-
-    variation_proposers = []
-    correctors = []
-    corrections_file_objs = []
-    tmpipe_objs = []
     try:
-        for i in range(len(vocabulary_sizes)):
-            tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
-            tmpipe_objs.append(tmpipe_obj)
-            var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-            variation_proposers.append(var_gen)
-            if pos_weight:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
-            else:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
-            corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
+        variation_proposers = []
+        correctors = []
+        corrections_file_objs = []
+        tmpipe_objs = []
+        try:
+            for i in range(len(vocabulary_sizes)):
+                tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', source[i+6].path)
+                tmpipe_objs.append(tmpipe_obj)
+                var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
+                variation_proposers.append(var_gen)
+                if pos_weight:
+                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
+                else:
+                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
+                corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
-        tagged_tokens = []
-        for line in open_with_unicode(source[0].path, None, 'r'):
-            if line == '\n':
-                if tagged_tokens:
-                    for i in range(len(vocabulary_sizes)):
-                        correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
-                        corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
-                    tagged_tokens = []
-            else:
-                split_line = line.split()
-                tagged_tokens.append( (split_line[4], split_line[5]) )
+            tagged_tokens = []
+            for line in open_with_unicode(source[0].path, None, 'r'):
+                if line == '\n':
+                    if tagged_tokens:
+                        for i in range(len(vocabulary_sizes)):
+                            correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
+                            corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
+                        tagged_tokens = []
+                else:
+                    split_line = line.split()
+                    tagged_tokens.append( (split_line[4], split_line[5]) )
+        finally:
+            for corrections_file_obj in  corrections_file_objs:
+                corrections_file_obj.close()
+
+        for i in range(len(variation_proposers)):
+            variation_proposers[i].print_cache_stats()
     finally:
-        for corrections_file_obj in  corrections_file_objs:
-            corrections_file_obj.close()
-
-    for i in range(len(variation_proposers)):
-        variation_proposers[i].print_cache_stats()
+        pos_ngram_server_obj.shutdown()
+        closed_class_ngram_server_obj.shutdown()
 
     return None
 
