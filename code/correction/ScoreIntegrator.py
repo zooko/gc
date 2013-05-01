@@ -27,7 +27,7 @@ def integrate_scores(data_directory):
     for seed in seeds:
         score_files = [s for s in os.listdir(data_directory + seed) if s.startswith('scores_')]
         for score_file_name in score_files:
-            vocabulary_size, rest = score_file_name.split('scores_trigram_model_size_')[1].rsplit('K_')
+            vocabulary_size, rest = score_file_name.split('_trigram_model_size_')[1].rsplit('K_')
             try:
                 pos_weight, error_probability = rest.split('pos_weight_')[1].rsplit('error_prob_')
                 pos_params[(vocabulary_size, pos_weight, error_probability)].append(data_directory+'/'+seed+'/'+score_file_name)
