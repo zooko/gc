@@ -31,7 +31,7 @@ def integrate_scores(data_directory):
             try:
                 pos_weight, error_probability = rest.split('pos_weight_')[1].rsplit('error_prob_')
                 pos_params[(vocabulary_size, pos_weight, error_probability)].append(data_directory+'/'+seed+'/'+score_file_name)
-            except ValueError:
+            except (ValueError, IndexError):
                 closed_class_weight, error_probability = rest.split('closed_class_weight_')[1].rsplit('error_prob_')
                 closed_class_params[(vocabulary_size, pos_weight, error_probability)].append(data_directory+'/'+seed+'/'+score_file_name)
 
