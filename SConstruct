@@ -82,7 +82,7 @@ def training_m2_5_to_gold(target, source, env):
          ):
          GoldGenerator.correct_file(train_m2_5_file_obj, train_gold_file_obj, insertables_file_obj, deletables_file_obj)
 
-class BuildFailure(Exception):
+class Buildfailure(Exception):
     pass
 
 def merge_external_corpus(target, source, env):
@@ -94,12 +94,12 @@ def merge_external_corpus(target, source, env):
         for line in external_corpus_file_obj:
                 merged_corpus_file_obj.write(line)
     except (EnvironmentError, UnicodeDecodeError), e:
-        raise BuildFailure(e, external_corpus_file_obj)
+        raise BuildFailure((e, external_corpus_file_obj))
     try:
         for line in train_gold_file_obj:
             merged_corpus_file_obj.write(line)
     except (EnvironmentError, UnicodeDecodeError), e:
-        raise BuildFailure(e, external_corpus_file_obj)
+        raise BuildFailure((e, external_corpus_file_obj))
 
 def create_vocabularies(target, source, env):
     """
