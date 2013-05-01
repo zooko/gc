@@ -493,11 +493,12 @@ vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
 pos_ngram_model_builder = Builder(action = make_pos_ngram_models)
+test_set_corrections_builder = Builder(action = correct)
 corrections_builder = Builder(action = correct)
 scores_builder = Builder(action = score_corrections)
 integrated_scores_builder = Builder(action = integrate_scores)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder, 'integrated_scores': integrated_scores_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'test_set_corrections': test_set_corrections_builder, 'corrections': corrections_builder, 'scores': scores_builder, 'integrated_scores': integrated_scores_builder})
 
 learning_sets_targets = [seed_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
 env.learning_sets(learning_sets_targets, [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
@@ -526,6 +527,10 @@ env.Alias('vocabulary_files', vocabulary_files_targets)
 trigram_models_targets = [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes]
 env.trigram_models(trigram_models_targets, [seed_directory + 'merged_training_corpora'] + [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 env.Alias('trigram_models', trigram_models_targets)
+
+test_set_corrections_targets = [seed_directory + 'test_set_corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.test_set_corrections(test_set_corrections_targets, [seed_directory + f for f in ['test_set', 'pos_dictionary', 'insertables', 'deletables', 'pos_ngram_model.arpa', 'closed_class_pos_ngram_model.arpa']] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('test_set_corrections', test_set_corrections_targets)
 
 corrections_targets = [seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
 env.corrections(corrections_targets, [seed_directory + 'development_set', seed_directory + 'pos_dictionary', seed_directory + 'insertables', seed_directory + 'deletables', seed_directory + 'pos_ngram_model.arpa', seed_directory + 'closed_class_pos_ngram_model.arpa'] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
