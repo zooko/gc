@@ -6,7 +6,7 @@ starttime = time.time()
 
 randomuuid = str(random.randrange(1000000000, 9999999999)).decode('utf-8')
 
-COLLECT_DIR=u'collected-scores-files'
+COLLECT_DIR=u'collected-scores-files-'+randomuuid
 COLLECT_DIR_FFN=os.path.join(u'..', COLLECT_DIR)
 os.mkdir(COLLECT_DIR_FFN)
 
