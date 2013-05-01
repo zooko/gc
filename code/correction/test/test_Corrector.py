@@ -4,28 +4,37 @@
 from code.language_modelling import SRILMServerPipe
 from code.correction import Corrector, VariationProposer
 from BackOffTrigramModel import BackOffTrigramModelPipe
+from math import log10
 import unittest, json
 
-probability_of_error = 0.01
+probability_of_error = log10(0.5)
 
-def variation_generator(tagged_sentence):
+def variation_generator(tagged_sentence, err_prob):
     tokens = [t[0] for t in tagged_sentence]
     tags = [t[1] for t in tagged_sentence]
     token = tokens[-1]
     if len(token) > 2:
-        return [ ]
+        return [], []
     else:
         if token == '.':
-            return [ tagged_sentence[:-1] + [(var, tags[-1])] for var in  [token + x for x in 'abcde'] ] + [ tagged_sentence[:-1] ]
+            return [ tagged_sentence[:-1] + [(var, tags[-1])] for var in  [token + x for x in 'abced'] ] + [ tagged_sentence[:-1] ], 4*[probability_of_error] + [3*probability_of_error] + [.001*probability_of_error]
         else:
-            return [ tagged_sentence[:-1] + [(var, tags[-1])] for var in  [token + x for x in 'abcde'] ]
+            return [ tagged_sentence[:-1] + [(var, tags[-1])] for var in  [token + x for x in 'abced'] ], 4*[probability_of_error] + [3*probability_of_error]
+
 def path_probability_function(tagged_tokens):
+    '''
+    This function penalises sentence length, likes a's, and really
+    likes "isd" after a while.
+    '''
     tokens = [t[0] for t in tagged_tokens]
     num_a_s = tokens[-1].count('a')
-    num_periods = tokens.count(['.'])
+
+    prob = -log10(30*len(tokens))
     if len(tokens) > 3 and tokens[1] == 'isd':
-        return 1 + .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
-    return .9 ** (len(tokens[-1]) - num_a_s) * .999999 ** num_a_s - len(tokens)
+        prob += 1
+    if len(tokens) > 5:
+        prob -= 1
+    return prob + log10(.9) * (5 - num_a_s)
 
 stanford_tagger_path = 'stanford-tagger/stanford-postagger.jar:'
 module_path = 'edu.stanford.nlp.tagger.maxent.MaxentTagger'
@@ -117,11 +126,11 @@ class CorrectorTest(unittest.TestCase):
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
+        corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -2.3, verbose=False, pos=0.5, pos_ngram_server_obj=pos_ngram_server_obj)
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
-        self.assertListEqual(result, [('The', 'DT'), ('goverment', 'NN'), ('is', 'VBZ'), ('wrong', 'JJ'), ('.', '.')], result)
+        self.assertListEqual(result, [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')], result)
 
         tagged_sentence = [('I', 'PRP'), ('agree', 'VBP'), ('to', 'TO'), ('a', 'DT'), ('large', 'JJ'), ('extent', 'NN'), ('that', 'IN'), ('current', 'JJ'), ('policies', 'NNS'), ('have', 'VBP'), ('helped', 'VBN'), ('to', 'TO'), ('ease', 'VB'), ('the', 'DT'), ('aging', 'NN'), ('process', 'NN'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
@@ -137,7 +146,7 @@ class CorrectorTest(unittest.TestCase):
 
         tagged_sentence = [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')]
         result = corrector.get_correction(tagged_sentence)
-        self.assertListEqual(result, [('The', 'DT'), ('goverment', 'NN'), ('is', 'VBZ'), ('wrong', 'JJ'), ('.', '.')], result)
+        self.assertListEqual(result, [('The', 'DT'), ('goverment', 'NN'), ('are', 'VBP'), ('wrong', 'JJ'), ('.', '.')], result)
 
 
 
