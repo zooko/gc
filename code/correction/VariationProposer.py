@@ -3,45 +3,70 @@
 
 from collections import OrderedDict, defaultdict, Counter
 from nltk.stem import PorterStemmer
+from math import log10
+
+N = 5 # We will use the top N most frequent words in each closed class.
+closed_class_tags = ['IN', 'DT', 'MD']
+AUX = {'are': 'VBP',
+       'be': 'VB',
+       'been': 'VBN',
+       'being': 'VBG',
+       'did': 'VBD',
+       'do': 'VB',
+       'does': 'VBZ',
+       'get': 'VB',
+       'getting': 'VBG',
+       'got': 'VBD',
+       'had': 'VBD',
+       'has': 'VBZ',
+       'have': 'VB',
+       'having': 'VBG',
+       'is': 'VBZ',
+       'was': 'VBD',
+       'were': 'VBD'}
 
 class VariationProposer():
 
     def __init__(self, tag_dictionary, tmpipe_obj):
-        self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
-        self.tag_dictionary = defaultdict(list)
         self.tmpipe_obj = tmpipe_obj
+        self.vocab_with_prefix = tmpipe_obj.vocabulary_with_prefix
+
+        # key: stanford tag, value: list of tokens that were found in
+        # the training data
+        self.tag_dictionary = defaultdict(list)
+
+        # Transform the count_dict inside tag_dictionary to just a
+        # list of tokens.
         for tag, token_count_dict in tag_dictionary.iteritems():
             self.tag_dictionary[tag] = token_count_dict.keys()
-        self.AUX = {'are': 'VBP',
-               'be': 'VB',
-               'been': 'VBN',
-               'being': 'VBG',
-               'did': 'VBD',
-               'do': 'VB',
-               'does': 'VBZ',
-               'get': 'VB',
-               'getting': 'VBG',
-               'got': 'VBD',
-               'had': 'VBD',
-               'has': 'VBZ',
-               'have': 'VB',
-               'having': 'VBG',
-               'is': 'VBZ',
-               'was': 'VBD',
-               'were': 'VBD'}
-        closed_class_tags = ['IN', 'DT', 'TO', 'MD']
 
+        # key: amber tag, value: limited list of token, stanford tag
+        # tuples (the top N plus maybe a couple more).
         self.closed_class_substitutables = {}
+
         for tag in closed_class_tags:
             counter = Counter(tag_dictionary[tag])
-            self.closed_class_substitutables[tag] = dict(counter.most_common(5)).keys()
+            self.closed_class_substitutables[tag] = [(token,tag) for token in [x[0] for x in counter.most_common(N)] if tmpipe_obj.in_vocabulary(token)]
 
-        self.closed_class_preceder_tokens = set([(k,v) for k,v in self.AUX.iteritems() if self.tmpipe_obj.in_vocabulary(k)])
-        self.closed_class_deletables = set([(k,v) for k,v in self.AUX.iteritems() if self.tmpipe_obj.in_vocabulary(k)])
+        aux_counts = []
+        for token,tag in AUX.iteritems():
+            if tmpipe_obj.in_vocabulary(token) and tag_dictionary[tag].has_key(token):
+                aux_counts.append( (tag_dictionary[tag][token], (token, tag) ))
+        aux_counts.sort()
+        self.closed_class_substitutables['AUX'] = [ a[1] for a in aux_counts[-N:] ]
+
+        self.closed_class_substitutables['IN'].append( ('to', 'TO') )
+        self.closed_class_substitutables['AUX'].append( ('to', 'TO') )
+
+        # Let () represent the empty substitution
         for tag in self.closed_class_substitutables.keys():
-            for token in self.closed_class_substitutables[tag]:
-                self.closed_class_preceder_tokens.add( (token, tag) )
-                self.closed_class_deletables.add( (token, tag) )
+            self.closed_class_substitutables[tag].append(())
+
+        # insertables is the set of all token, tag tuple in closed_class_substitutables
+        self.closed_class_insertables = set()
+        for token_tag_list in self.closed_class_substitutables.itervalues():
+            self.closed_class_insertables |= set(token_tag_list)
+        self.closed_class_insertables.discard(())
 
         self.cache = OrderedDict()
         self.cache_size = 500
@@ -50,29 +75,12 @@ class VariationProposer():
 
     def closed_class_alternatives(self, token, tag):
 
-        if tag == 'AUX':
-            alternatives = [(k,v) for k,v in self.AUX.iteritems() if k != token and self.tmpipe_obj.in_vocabulary(k)]
-        else:
-            alternatives = [(alt, tag) for alt in self.closed_class_substitutables[tag] if alt != token and self.tmpipe_obj.in_vocabulary(alt)]
-
-        if (token, tag) in self.closed_class_deletables:
-            alternatives.append(())
-
-        return sorted(set(alternatives))
+        return set(self.closed_class_substitutables[tag]) - set([(token, tag)])
 
     def open_class_alternatives(self, token, tag):
-        
+
         tag_type = tag[:2]
 
-        if len(token) > 4:
-            prefix = token[:-4]
-            suffix = token[-4:]
-        else:
-            prefix = token[0]
-            suffix = token[1:]
-        prefix_tokens = [t for t in self.vocab_with_prefix(prefix) if self.stemmer.stem(t) == self.stemmer.stem(token)]
-
-        relevant_tag_prefix_tokens_with_tag = set([])
         if tag_type == 'VB':
             keys = sorted([k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag])
         else:
@@ -88,42 +96,66 @@ class VariationProposer():
             else:
                 assert False, tag
 
-        for pt in prefix_tokens:
-            for k in keys:
-                if pt in sorted(self.tag_dictionary[k]):
-                    relevant_tag_prefix_tokens_with_tag.add((pt, k))
-        if (token, tag) in relevant_tag_prefix_tokens_with_tag:
-            relevant_tag_prefix_tokens_with_tag.remove((token, tag))
+        if len(token) > 4:
+            prefix = token[:-4]
+        else:
+            prefix = token[0]
+
+        relevant_tag_prefix_tokens_with_tag = set()
+        for k in keys:
+            for t in self.vocab_with_prefix(prefix):
+                if self.stemmer.stem(t) == self.stemmer.stem(token) and t in self.tag_dictionary[k]:
+                    relevant_tag_prefix_tokens_with_tag.add((t, k))
+
+        relevant_tag_prefix_tokens_with_tag.discard((token, tag))
+
         return sorted(relevant_tag_prefix_tokens_with_tag)
 
     def get_alternatives(self, token, tag):
         if self.cache.has_key( (token, tag) ):
-            self.cache_stats[0] += 1
+            self.cache_stats[0] += 1 # hit
             alternatives = self.cache[(token, tag)]
             del(self.cache[(token, tag)])
             self.cache[(token, tag)] = alternatives
             return alternatives
 
-        self.cache_stats[1] += 1
-        if tag in ["IN", "DT"]:
+        self.cache_stats[1] += 1 # miss
+
+        if token == 'to':
+            alternatives = self.closed_class_alternatives(token, 'IN') | self.closed_class_alternatives(token, 'AUX')
+            alternatives.discard(('to', 'TO'))
+        elif tag in closed_class_tags:
             alternatives = self.closed_class_alternatives(token, tag)
-        elif token in self.AUX.keys():
+        elif token in AUX.keys():
             alternatives = self.closed_class_alternatives(token, 'AUX')
+            alternatives.discard((token, tag))
         elif tag[:2] in ["NN", "VB"]:
             alternatives = self.open_class_alternatives(token, tag)
         else:
             alternatives = set([])
 
-#        print "Token, tag, alternatives: ", token, tag, alternatives
         self.cache[(token, tag)] = alternatives
         if len(self.cache) > self.cache_size:
             self.cache.popitem(last=False)
 
+        assert (token, tag) not in alternatives, (token, tag)
         return alternatives
 
-    def generate_path_variations(self, tagged_sentence):
+    def generate_path_variations(self, tagged_sentence, prob_of_err):
 
+        prob_of_no_err = log10(1 - 10**prob_of_err)
+
+        # TODO consider list of tuples instead of pair of parallel lists for the path_variations and path_error_terms
+
+        # TODO consider changing the interface so only the last token and last tag get passed in
+
+        # i'th element is a list of tokens
         path_variations = []
+
+        # i'th element of path_error_terms is the probability of a
+        # transformation leading to the observation (tagged_sentence)
+        # from the i'th element of path variations.
+        path_error_terms = []
 
         last_token = tagged_sentence[-1][0]
         last_tag = tagged_sentence[-1][1]
@@ -146,6 +178,7 @@ class VariationProposer():
             if var == ():
                 # Deletion
                 path_variations.append(tagged_sentence[:-1])
+                path_error_terms.append(prob_of_err - log10(len(token_variations)))
 
             else:
                 '''
@@ -161,32 +194,42 @@ class VariationProposer():
 
                 # Substitution and no insertion
                 path_variations.append(tagged_sentence[:-1] + [recased_var])
+                path_error_terms.append(prob_of_err - log10(len(token_variations)))
 
-                for insertion_token in self.closed_class_preceder_tokens:
+                # Substitution and insertion
+                for insertable in self.closed_class_insertables:
+                    insertable_variations = self.get_alternatives(*insertable)
+                    assert len(insertable_variations) != 0, repr(insertables) + ' : ' + repr(insertable_variations)
 
                     if len(tagged_sentence) == 1: # Substitution and insertion at beginning.
-                        insertion_token = (insertion_token[0].title(), insertion_token[1])
-                        if case != 't' and var[0] != 'a':
-                            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [recased_var])
+                        insertable = (insertable[0].title(), insertable[1])
+                        if case == 't' or last_token == 'A':
+                            path_variations.append(tagged_sentence[:-1] + [insertable] + [var])
                         else:
-                            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [var])
+                            path_variations.append(tagged_sentence[:-1] + [insertable] + [recased_var])
 
                     else:
                         # Substitution and insertion not at beginning
-                        path_variations.append(tagged_sentence[:-1] + [insertion_token] + [recased_var])
+                        path_variations.append(tagged_sentence[:-1] + [insertable] + [recased_var])
+                    path_error_terms.append( 2*prob_of_err - log10(len(insertable_variations)) - log10(len(token_variations)) )
 
-        for insertion_token in self.closed_class_preceder_tokens:
+        for insertable in self.closed_class_insertables:
+            insertable_variations = self.get_alternatives(*insertable)
+            assert len(insertable_variations) != 0, repr(insertables) + ' : ' + repr(insertable_variations)
 
             possibly_recased_token = tagged_sentence[-1]
 
             # Insertion with no deletion or substitution
             if len(tagged_sentence) == 1:
-                insertion_token = (insertion_token[0].title(), insertion_token[1])
+                insertable = (insertable[0].title(), insertable[1])
                 if case == 't':
                     possibly_recased_token = (last_token.lower(), last_tag)
 
-            path_variations.append(tagged_sentence[:-1] + [insertion_token] + [possibly_recased_token])
-        return path_variations
+            path_variations.append(tagged_sentence[:-1] + [insertable] + [possibly_recased_token])
+            path_error_terms.append( prob_of_err - log10(len(insertable_variations)) + prob_of_no_err)
+
+        assert len(path_variations) == len(path_error_terms), (len(path_variations), len(path_error_terms))
+        return path_variations, path_error_terms
 
     def print_cache_stats(self):
 
