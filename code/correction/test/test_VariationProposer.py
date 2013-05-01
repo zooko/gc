@@ -7,22 +7,22 @@ from BackOffTrigramModel import BackOffTrigramModelPipe
 import unittest
 
 tag_dictionary = defaultdict(dict)
-tag_dictionary['DT'] = {"a": 22, "the": 40, "an": 30, "this": 10, "any": 2, "another": 1}
-tag_dictionary["IN"] = {"with":40, "from":40, "of":40}
-tag_dictionary["CC"] = {"and":40, "but":40, "or":40}
-tag_dictionary["VB"] = {"like":40, "love":40, 'be':50, 'have':60}
-tag_dictionary["VBD"] = {'loved':40}
-tag_dictionary["VBG"] = {'loving':40}
-tag_dictionary['TO'] = {'to':40}
-tag_dictionary['MD'] = {'might':40, 'could':40}
+tag_dictionary['DT'] = {u"a": 22, u"the": 40, u"an": 30, u"this": 10, u"any": 2, u"another": 1}
+tag_dictionary["IN"] = {u"with":40, u"from":40, u"of":40}
+tag_dictionary["CC"] = {u"and":40, u"but":40, "or":40}
+tag_dictionary["VB"] = {u"like":40, u"love":40, u'be':50, u'have':60}
+tag_dictionary["VBD"] = {u'loved':40}
+tag_dictionary["VBG"] = {u'loving':40}
+tag_dictionary['TO'] = {u'to':40}
+tag_dictionary['MD'] = {u'might':40, u'could':40}
 
-l_vars = ['laboured', 'labyrinths', 'laden', 'lamp', 'like', 'love', 'lover', 'loves', 'loving']
+l_vars = [u'laboured', u'labyrinths', u'laden', u'lamp', u'like', u'love', u'lover', u'loves', u'loving']
 
 def vocab_with_prefix(prefix):
-    if prefix == 'l':
+    if prefix == u'l':
         return l_vars
     if prefix == '':
-        return ['am', 'are', 'bad', 'cue', 'did', 'is']
+        return [u'am', u'are', u'bad', u'cue', u'did', u'is']
     return []
 
 tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
@@ -34,15 +34,15 @@ class VariationProposerTest(unittest.TestCase):
     def test_dicts(self):
 
         self.assertDictEqual(proposer.closed_class_substitutables,
-                             {'MD': [('could', 'MD'), ('might', 'MD'), ()],
-                              'DT': [('the', 'DT'), ('an', 'DT'), ('a', 'DT'), ('this', 'DT'), ('any', 'DT'), ()],
-                              'AUX': [('be', 'VB'), ('have', 'VB'), ('to', 'TO'), ()],
-                              'IN': [('with', 'IN'), ('from', 'IN'), ('of', 'IN'), ('to', 'TO'), ()]},
+                             {'MD': [(u'could', 'MD'), (u'might', 'MD'), ()],
+                              'DT': [(u'the', 'DT'), (u'an', 'DT'), (u'a', 'DT'), (u'this', 'DT'), (u'any', 'DT'), ()],
+                              'AUX': [(u'be', 'VB'), (u'have', 'VB'), (u'to', 'TO'), ()],
+                              'IN': [(u'with', 'IN'), (u'from', 'IN'), (u'of', 'IN'), (u'to', 'TO'), ()]},
                              proposer.closed_class_substitutables)
 
     def test_closed_class_alternatives(self):
 
-        sentence = "We loved with a love that was more than love .".lower()
+        sentence = u"We loved with a love that was more than love .".lower()
         tokens = sentence.split()
         tags = ['PRP', 'VBD', 'IN', 'DT', 'NN', 'WDT', 'VBD', 'JJR', 'IN', 'NN'][:len(sentence.split())]
 
@@ -50,17 +50,17 @@ class VariationProposerTest(unittest.TestCase):
         self.assertSetEqual(set(proposed), set([]), proposed)
 
         proposed = proposer.get_alternatives(tokens[1], tags[1])
-        self.assertSetEqual(set(proposed), set([('love', 'VB')]), proposed)
+        self.assertSetEqual(set(proposed), set([(u'love', 'VB')]), proposed)
 
         proposed = proposer.get_alternatives(tokens[2], tags[2])
-        self.assertSetEqual(set(proposed), set([("from", 'IN'), ("of", 'IN'), ('to', 'TO'), ()]), proposed)
+        self.assertSetEqual(set(proposed), set([(u"from", 'IN'), (u"of", 'IN'), (u'to', 'TO'), ()]), proposed)
 
         proposed = proposer.get_alternatives(tokens[3], tags[3])
-        self.assertSetEqual(set(proposed), set([("the", 'DT'), ("any", 'DT'), ("this", 'DT'), ("an", "DT"), ()]), proposed)
+        self.assertSetEqual(set(proposed), set([(u"the", 'DT'), (u"any", 'DT'), (u"this", 'DT'), (u"an", "DT"), ()]), proposed)
 
     def test_generate_path_variations(self):
 
-        tagged_sentence = [('We', 'PRP'), ('loved', 'VBD'), ('with', 'IN')]
+        tagged_sentence = [(u'We', 'PRP'), (u'loved', 'VBD'), (u'with', 'IN')]
         beginning = tagged_sentence[:-1]
         err = -1.3
 
@@ -73,39 +73,39 @@ class VariationProposerTest(unittest.TestCase):
         index = path_variations.index(beginning)
         self.assertAlmostEqual(path_err[index], -1.9020599913279623, 5, msg=path_err[index])
 
-        self.assertIn(beginning + [('a', 'DT'), ('from', 'IN')], path_variations, path_variations)
-        index = path_variations.index(beginning + [('a', 'DT'), ('from', 'IN')])
+        self.assertIn(beginning + [(u'a', 'DT'), (u'from', 'IN')], path_variations, path_variations)
+        index = path_variations.index(beginning + [(u'a', 'DT'), (u'from', 'IN')])
         self.assertAlmostEqual(path_err[index], -3.9010299956639813, 5, msg=path_err[index])
 
-        self.assertIn(beginning + [('a', 'DT'), ('with', 'IN')], path_variations, path_variations)
-        index = path_variations.index(beginning + [('a', 'DT'), ('with', 'IN')])
+        self.assertIn(beginning + [(u'a', 'DT'), (u'with', 'IN')], path_variations, path_variations)
+        index = path_variations.index(beginning + [(u'a', 'DT'), (u'with', 'IN')])
         self.assertAlmostEqual(path_err[index], -2.0213006770718103, 5, msg=path_err[index])
 
-        self.assertIn(beginning + [('a', 'DT'), ('of', 'IN')], path_variations, path_variations)
-        self.assertIn(beginning + [('the', 'DT'), ('from', 'IN')], path_variations, path_variations)
-        self.assertIn(beginning + [('the', 'DT'), ('of', 'IN')], path_variations, path_variations)
-        self.assertIn(beginning + [('of', 'IN'), ('from', 'IN')], path_variations, path_variations)
-        self.assertIn(beginning + [('of', 'IN'), ('of', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'a', 'DT'), (u'of', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'the', 'DT'), (u'from', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'the', 'DT'), (u'of', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'of', 'IN'), (u'from', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'of', 'IN'), (u'of', 'IN')], path_variations, path_variations)
 
-        self.assertIn(beginning + [('from', 'IN')], path_variations, path_variations)
-        index = path_variations.index(beginning + [('from', 'IN')])
+        self.assertIn(beginning + [(u'from', 'IN')], path_variations, path_variations)
+        index = path_variations.index(beginning + [(u'from', 'IN')])
         self.assertAlmostEqual(path_err[index], -1.9020599913279623, 5, msg=path_err[index])
 
-        self.assertIn(beginning + [('of', 'IN')], path_variations, path_variations)
+        self.assertIn(beginning + [(u'of', 'IN')], path_variations, path_variations)
 
-        self.assertNotIn(beginning + [('another', 'DT'), ('from', 'IN')], path_variations, path_variations)
-        self.assertNotIn(beginning + [('another', 'DT'), ('of', 'IN')], path_variations, path_variations)
-        self.assertNotIn(beginning + [('with', 'IN')], path_variations, path_variations)
+        self.assertNotIn(beginning + [(u'another', 'DT'), (u'from', 'IN')], path_variations, path_variations)
+        self.assertNotIn(beginning + [(u'another', 'DT'), (u'of', 'IN')], path_variations, path_variations)
+        self.assertNotIn(beginning + [(u'with', 'IN')], path_variations, path_variations)
 
-        tagged_sentence = [('We', 'PRP')]
+        tagged_sentence = [(u'We', 'PRP')]
         path_variations, path_err = proposer.generate_path_variations(tagged_sentence, err)
-        self.assertIn([('Of', 'IN'), ('we', 'PRP')], path_variations, path_variations)
+        self.assertIn([(u'Of', 'IN'), (u'we', 'PRP')], path_variations, path_variations)
 
-        tagged_sentence = [('Of', 'IN')]
+        tagged_sentence = [(u'Of', 'IN')]
         path_variations, path_err = proposer.generate_path_variations(tagged_sentence, err)
-        self.assertIn([('Of', 'IN'), ('of', 'IN')], path_variations, path_variations)
-        self.assertIn([('From', 'IN'), ('of', 'IN')], path_variations, path_variations)
-        self.assertIn([('From', 'IN')], path_variations, path_variations)
+        self.assertIn([(u'Of', 'IN'), (u'of', 'IN')], path_variations, path_variations)
+        self.assertIn([(u'From', 'IN'), (u'of', 'IN')], path_variations, path_variations)
+        self.assertIn([(u'From', 'IN')], path_variations, path_variations)
 
 if __name__ == '__main__':
     unittest.main()
