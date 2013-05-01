@@ -74,7 +74,7 @@ class CorrectorTest(unittest.TestCase):
     def test_pos_ngram_path_probability(self):
 
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
-        pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('7878', 'code/correction/test/pos_trigram_model_0K.arpa', '5')
+        pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('code/correction/test/pos_trigram_model_0K.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
 
@@ -91,7 +91,7 @@ class CorrectorTest(unittest.TestCase):
     def test_closed_class_pos_ngram_path_probability(self):
 
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
-        closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('1234', 'code/correction/test/closed_class_order_5.arpa', '5')
+        closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
 
@@ -122,7 +122,7 @@ class CorrectorTest(unittest.TestCase):
 
     def test_pos_correction(self):
 
-        pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8488', 'code/correction/test/pos_5-gram.arpa', '5')
+        pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('code/correction/test/pos_5-gram.arpa', '5')
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
@@ -139,7 +139,7 @@ class CorrectorTest(unittest.TestCase):
     def test_closed_class_pos_correction(self):
 
         tmpipe_obj = BackOffTrigramModelPipe.BackOffTMPipe('BackOffTrigramModelPipe', 'code/correction/test/trigram_model_5K.arpa')
-        closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('5888', 'code/correction/test/closed_class_order_5.arpa', '5')
+        closed_class_pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('code/correction/test/closed_class_order_5.arpa', '5')
         pos_dictionary = json.load(open('code/correction/test/pos_dictionary', 'r'))
         var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
         corrector = Corrector.Corrector(tmpipe_obj, 5, var_gen.generate_path_variations, -1.3, verbose=False, closed_class=0.5, closed_class_pos_ngram_server_obj=closed_class_pos_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX)
