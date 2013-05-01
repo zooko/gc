@@ -50,7 +50,7 @@ class VariationProposer():
 
         aux_counts = []
         for token,tag in AUX.iteritems():
-            if tmpipe_obj.in_vocabulary(token) and tag_dictionary[tag].has_key(token):
+            if tmpipe_obj.in_vocabulary(token) and token in tag_dictionary[tag]:
                 aux_counts.append( (tag_dictionary[tag][token], (token, tag) ))
         aux_counts.sort()
         self.closed_class_substitutables['AUX'] = [ a[1] for a in aux_counts[-N:] ]
@@ -82,7 +82,7 @@ class VariationProposer():
         tag_type = tag[:2]
 
         if tag_type == 'VB':
-            keys = sorted([k for k in self.tag_dictionary.keys() if k.startswith(tag_type) and k != tag])
+            keys = sorted([k for k in self.tag_dictionary if k.startswith(tag_type) and k != tag])
         else:
             assert tag_type == 'NN', tag_type
             if tag == 'NNS' and 'NN' in self.tag_dictionary:
@@ -103,9 +103,15 @@ class VariationProposer():
 
         relevant_tag_prefix_tokens_with_tag = set()
         for k in keys:
-            for t in self.vocab_with_prefix(prefix):
-                if self.stemmer.stem(t) == self.stemmer.stem(token) and t in self.tag_dictionary[k]:
-                    relevant_tag_prefix_tokens_with_tag.add((t, k))
+            for token in self.vocab_with_prefix(prefix):
+                assert isinstance(token, unicode), (repr(token), type(token))
+                stemt = self.stemmer.stem(token)
+                assert isinstance(stemt, unicode), (repr(stemt), type(stemt))
+                stemtok = self.stemmer.stem(token)
+                assert isinstance(stemtok, unicode), (repr(stemtok), type(stemtok))
+                if stemt == stemtok:
+                    if token in self.tag_dictionary[k]:
+                        relevant_tag_prefix_tokens_with_tag.add((token, k))
 
         relevant_tag_prefix_tokens_with_tag.discard((token, tag))
 
