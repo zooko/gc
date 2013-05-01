@@ -244,7 +244,7 @@ def real_correct(target, source, env):
                 if pos_weight:
                     correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
                 else:
-                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
+                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_pos_ngram_server_obj=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
                 corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
             tagged_tokens = []
@@ -445,10 +445,7 @@ try:
 except:
     proportion = 0.99
 
-try:
-    seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
-except:
-    seed = 7
+seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
 
 try:
     error_probability = float([x[1] for x in ARGLIST if x[0] == 'error_probability'][0])
