@@ -192,10 +192,13 @@ def get_pos_data(target, source, env):
 def make_pos_ngram_models(target, source, env):
 
     # pos_trigram_model.arpa, from pos_training_set
-    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
+    sp1 = subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
 
     # closed_class_pos_trigram_model.arpa, from closed_class_pos_training_set
-    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
+    sp2 = subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
+
+    sp1.communicate()
+    sp2.communicate()
 
     return None
 
