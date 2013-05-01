@@ -12,7 +12,6 @@ from contextlib import nested
 
 import codecs, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
-import BackOffTrigramModel
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
@@ -221,6 +220,8 @@ def statprof_correct(target, source, env):
         statprof.stop()
         statprof.display()
 
+BOTMCFFI=True
+
 def real_correct(target, source, env):
 
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
@@ -233,7 +234,11 @@ def real_correct(target, source, env):
     tmpipe_objs = []
     try:
         for i in range(len(vocabulary_sizes)):
-            tmpipe_obj = BackOffTrigramModel.BackOffTMCFFI(source[i+6].path)
+            if BOTMCFFI:
+                from BackOffTrigramModel import BackOffTrigramModelCFFI
+                tmpipe_obj = BackOffTrigramModelCFFI.BackOffTMCFFI(source[i+6].path)
+            else:
+                raise "Whatever"
             tmpipe_objs.append(tmpipe_obj)
             var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
             variation_proposers.append(var_gen)
