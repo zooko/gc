@@ -62,6 +62,9 @@ class VariationProposer():
         for tag in self.closed_class_substitutables.keys():
             self.closed_class_substitutables[tag].append(())
 
+        for k in self.closed_class_substitutables:
+            self.closed_class_substitutables[k] = frozenset(self.closed_class_substitutables[k])
+            
         # insertables is the set of all token, tag tuple in closed_class_substitutables
         self.closed_class_insertables = set()
         for token_tag_list in self.closed_class_substitutables.itervalues():
@@ -74,15 +77,14 @@ class VariationProposer():
         self.stemmer = PorterStemmer()
 
     def closed_class_alternatives(self, token, tag):
-
-        return set(self.closed_class_substitutables[tag]) - set([(token, tag)])
+        return self.closed_class_substitutables[tag] - frozenset([(token, tag)])
 
     def open_class_alternatives(self, token, tag):
 
         tag_type = tag[:2]
 
         if tag_type == 'VB':
-            keys = sorted([k for k in self.tag_dictionary if k.startswith(tag_type) and k != tag])
+            keys = [k for k in self.tag_dictionary if k.startswith(tag_type) and k != tag]
         else:
             assert tag_type == 'NN', tag_type
             if tag == 'NNS' and 'NN' in self.tag_dictionary:
@@ -115,7 +117,7 @@ class VariationProposer():
 
         relevant_tag_prefix_tokens_with_tag.discard((token, tag))
 
-        return sorted(relevant_tag_prefix_tokens_with_tag)
+        return frozenset(relevant_tag_prefix_tokens_with_tag)
 
     def get_alternatives(self, token, tag):
         if self.cache.has_key( (token, tag) ):
@@ -128,23 +130,21 @@ class VariationProposer():
         self.cache_stats[1] += 1 # miss
 
         if token == 'to':
-            alternatives = self.closed_class_alternatives(token, 'IN') | self.closed_class_alternatives(token, 'AUX')
-            alternatives.discard(('to', 'TO'))
+            alternatives = (self.closed_class_alternatives(token, 'IN') | self.closed_class_alternatives(token, 'AUX')) - frozenset([('to', 'TO')])
         elif tag in closed_class_tags:
             alternatives = self.closed_class_alternatives(token, tag)
         elif token in AUX.keys():
-            alternatives = self.closed_class_alternatives(token, 'AUX')
-            alternatives.discard((token, tag))
+            alternatives = self.closed_class_alternatives(token, 'AUX') - frozenset([(token, tag)])
         elif tag[:2] in ["NN", "VB"]:
             alternatives = self.open_class_alternatives(token, tag)
         else:
-            alternatives = set([])
+            alternatives = frozenset()
 
         self.cache[(token, tag)] = alternatives
         if len(self.cache) > self.cache_size:
             self.cache.popitem(last=False)
 
-        assert (token, tag) not in alternatives, (token, tag)
+        assert (token, tag) not in alternatives, ((token, tag), alternatives, self.closed_class_alternatives(token, 'AUX'))
         return alternatives
 
     def generate_path_variations(self, tagged_sentence, prob_of_err):
