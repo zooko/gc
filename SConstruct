@@ -15,7 +15,7 @@ from collections import defaultdict, Counter
 
 from code.preprocessing import EssayRandomiser, GoldGenerator, StanfordTaggerPipe
 from code.language_modelling import VocabularyCutter, SRILMServerPipe
-from code.correction import VariationProposer, Corrector
+from code.correction import VariationProposer, Corrector, ScoreIntegrator
 
 def open_with_unicode(file_name, compression_type, mode):
     assert compression_type in [None, 'gzip', 'bzip2']
@@ -60,7 +60,7 @@ def randomise_essays(target, source, env):
         devel_m2_5_file_obj
         ):
         rand_obj = random.Random(seed)
-        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj)
+        er = EssayRandomiser.Randomiser(essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj, proportion)
         er.randomise()
         return None
 
@@ -91,24 +91,24 @@ def merge_external_corpus(target, source, env):
         for line in external_corpus_file_obj:
                 merged_corpus_file_obj.write(line)
     except (EnvironmentError, UnicodeDecodeError), e:
-        raise BuildFailure(e, external_corpus_file_obj)
+        raise BuildFailure((e, external_corpus_file_obj))
     try:
         for line in train_gold_file_obj:
             merged_corpus_file_obj.write(line)
     except (EnvironmentError, UnicodeDecodeError), e:
-        raise BuildFailure(e, external_corpus_file_obj)
+        raise BuildFailure((e, external_corpus_file_obj))
 
 def create_vocabularies(target, source, env):
     """
     """
     merged_corpus_file_name = source[0].path
-    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', data_directory + 'counts'])
+    srilm_ngram_counts = subprocess.Popen(['ngram-count', '-order', '1', '-tolower', '-text', merged_corpus_file_name, '-sort', '-write', seed_directory + 'counts'])
     srilm_ngram_counts.communicate()
 
     if vocabulary_sizes:
-        unigram_counts_file_obj = open_with_unicode(data_directory + 'counts', None, 'r')
+        unigram_counts_file_obj = open_with_unicode(seed_directory + 'counts', None, 'r')
         size = vocabulary_sizes[0]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
+        vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
         assert os.path.normpath(target[0].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[0].path + '; Expected: ' + vocabulary_file_name
         with open_with_unicode(vocabulary_file_name, None, 'w') as vocabulary_file_obj:
             cutter = VocabularyCutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
@@ -119,8 +119,8 @@ def create_vocabularies(target, source, env):
 
             for i in range(len(vocabulary_sizes))[1:]:
                 size = vocabulary_sizes[i]
-                vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-                assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
+                vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
+                assert os.path.normpath(target[i].path) == os.path.normpath(vocabulary_file_name), 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
                 vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
                 for line in base_vocabulary[:int(float(size)*1000)]:
                     vocabulary_file_obj.write(line)
@@ -132,8 +132,8 @@ def create_trigram_models(target, source, env):
 
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
+        vocabulary_file_name = seed_directory + str(size) + 'K.vocab'
+        trigram_model_name = seed_directory + 'trigram_model_' + str(size) + 'K.arpa'
         assert os.path.normpath(target[i].path) == os.path.normpath(trigram_model_name), target[i].path
         srilm_make_lm = subprocess.Popen(['ngram-count', '-vocab', vocabulary_file_name, '-tolower', '-unk', '-kndiscount3', '-debug', '2', '-text', merged_corpus_file_name, '-lm', trigram_model_name])
         srilm_make_lm.communicate()
@@ -189,10 +189,13 @@ def get_pos_data(target, source, env):
 def make_pos_ngram_models(target, source, env):
 
     # pos_trigram_model.arpa, from pos_training_set
-    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
+    sp1 = subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[0].path, '-lm', target[0].path])
 
     # closed_class_pos_trigram_model.arpa, from closed_class_pos_training_set
-    subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
+    sp2 = subprocess.Popen(['ngram-count', '-order', '5', '-unk', '-text', source[1].path, '-lm', target[1].path])
+
+    sp1.communicate()
+    sp2.communicate()
 
     return None
 
@@ -225,46 +228,49 @@ BOTMCFFI=True
 def real_correct(target, source, env):
 
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
-    pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('8989', source[4].path, '5')
-    closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe('9898', source[5].path, '5')
-
-    variation_proposers = []
-    correctors = []
-    corrections_file_objs = []
-    tmpipe_objs = []
+    pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[4].path, '5')
+    closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[5].path, '5')
     try:
-        for i in range(len(vocabulary_sizes)):
-            if BOTMCFFI:
-                from BackOffTrigramModel import BackOffTrigramModelCFFI
-                tmpipe_obj = BackOffTrigramModelCFFI.BackOffTMCFFI(source[i+6].path)
-            else:
-                raise "Whatever"
-            tmpipe_objs.append(tmpipe_obj)
-            var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
-            variation_proposers.append(var_gen)
-            if pos_weight:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
-            else:
-                correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_ngram_server=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
-            corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
+        variation_proposers = []
+        correctors = []
+        corrections_file_objs = []
+        tmpipe_objs = []
+        try:
+            for i in range(len(vocabulary_sizes)):
+                if BOTMCFFI:
+                    from BackOffTrigramModel import BackOffTrigramModelCFFI
+                    tmpipe_obj = BackOffTrigramModelCFFI.BackOffTMCFFI(source[i+6].path)
+                else:
+                    raise "Whatever"
+                tmpipe_objs.append(tmpipe_obj)
+                var_gen = VariationProposer.VariationProposer(pos_dictionary, tmpipe_obj)
+                variation_proposers.append(var_gen)
+                if pos_weight:
+                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, pos=pos_weight, pos_ngram_server_obj=pos_ngram_server_obj))
+                else:
+                    correctors.append(Corrector.Corrector(tmpipe_obj, width, var_gen.generate_path_variations, error_probability, verbose=False, closed_class=closed_class_weight, closed_class_pos_ngram_server_obj=closed_class_ngram_server_obj, closed_class_tags=closed_class_tags, AUX=AUX))
+                corrections_file_objs.append(open_with_unicode(target[i].path, None, 'w'))
 
-        tagged_tokens = []
-        for line in open_with_unicode(source[0].path, None, 'r'):
-            if line == '\n':
-                if tagged_tokens:
-                    for i in range(len(vocabulary_sizes)):
-                        correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
-                        corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
-                    tagged_tokens = []
-            else:
-                split_line = line.split()
-                tagged_tokens.append( (split_line[4], split_line[5]) )
+            tagged_tokens = []
+            for line in open_with_unicode(source[0].path, None, 'r'):
+                if line == '\n':
+                    if tagged_tokens:
+                        for i in range(len(vocabulary_sizes)):
+                            correction_tokens_list = [t[0] for t in correctors[i].get_correction(tagged_tokens)]
+                            corrections_file_objs[i].write(' '.join(correction_tokens_list) + '\n')
+                        tagged_tokens = []
+                else:
+                    split_line = line.split()
+                    tagged_tokens.append( (split_line[4], split_line[5]) )
+        finally:
+            for corrections_file_obj in  corrections_file_objs:
+                corrections_file_obj.close()
+
+        for i in range(len(variation_proposers)):
+            variation_proposers[i].print_cache_stats()
     finally:
-        for corrections_file_obj in  corrections_file_objs:
-            corrections_file_obj.close()
-
-    for i in range(len(variation_proposers)):
-        variation_proposers[i].print_cache_stats()
+        pos_ngram_server_obj.shutdown()
+        closed_class_ngram_server_obj.shutdown()
 
     return None
 
@@ -392,7 +398,7 @@ def score_corrections(target, source, env):
     # return subprocess_score_corrections(target, source, env)
 
 def pythonic_score_corrections(target, source, env):
-    gold_fname = os.path.join(data_directory, 'development_set_m2_5')
+    gold_fname = os.path.join(seed_directory, 'development_set_m2_5')
 
     scorer = M2Scorer(open_with_unicode(gold_fname, None, 'r'), verbose=True)
 
@@ -407,8 +413,15 @@ def subprocess_score_corrections(target, source, env):
     for i in range(len(vocabulary_sizes)):
         with open_with_unicode(target[i].path, None, 'w') as score_file_obj:
             print source[i].path
-            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', source[i].path, data_directory + 'development_set_m2_5'], stdout=score_file_obj)
+            scorer = subprocess.Popen([sys.executable, data_directory + 'm2scorer.py', '-v', source[i].path, seed_directory + 'development_set_m2_5'], stdout=score_file_obj)
             scorer.communicate(None)
+
+    return None
+
+def integrate_scores(target, source, env):
+
+    f = open(target[0].path, 'w')
+    f.write(repr(ScoreIntegrator.integrate_scores(data_directory)))
 
     return None
 
@@ -430,10 +443,13 @@ except:
     print "Usage: scons data_directory=DIR variables target"
     raise Exception
 
+
 try:
-    seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
+    proportion = float([x[1] for x in ARGLIST if x[0] == 'proportion'][0])
 except:
-    seed = 7
+    proportion = 0.99
+
+seed = int([x[1] for x in ARGLIST if x[0] == 'seed'][0])
 
 try:
     error_probability = float([x[1] for x in ARGLIST if x[0] == 'error_probability'][0])
@@ -476,6 +492,9 @@ else:
 
 assert not (pos_weight and closed_class_weight), "Choose either pos_weight or closed_class_weight."
 
+seed_directory = data_directory + "seed_" + str(seed) + '/'
+if not os.path.exists(seed_directory): os.mkdir(seed_directory)
+
 learning_sets_builder = Builder(action = randomise_essays)
 training_gold_builder = Builder(action = training_m2_5_to_gold)
 merged_corpora_builder = Builder(action = merge_external_corpus)
@@ -483,43 +502,60 @@ vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 pos_data_builder = Builder(action = get_pos_data)
 pos_ngram_model_builder = Builder(action = make_pos_ngram_models)
+test_set_corrections_builder = Builder(action = correct)
 corrections_builder = Builder(action = correct)
 scores_builder = Builder(action = score_corrections)
+integrated_scores_builder = Builder(action = integrate_scores)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'corrections': corrections_builder, 'scores': scores_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_gold': training_gold_builder, 'merge_external_corpus': merged_corpora_builder, 'vocabulary_files': vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'pos_data' : pos_data_builder, 'pos_ngram_models' : pos_ngram_model_builder, 'test_set_corrections': test_set_corrections_builder, 'corrections': corrections_builder, 'scores': scores_builder, 'integrated_scores': integrated_scores_builder})
 
-env.learning_sets([data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']], [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
+learning_sets_targets = [seed_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']]
+env.learning_sets(learning_sets_targets, [data_directory + 'corpus', data_directory + 'm2', data_directory + 'm2_5'])
+env.Alias('learning_sets', learning_sets_targets)
 
-env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set', 'training_set_m2', 'training_set_m2_5', 'development_set', 'development_set_m2', 'development_set_m2_5']])
+training_gold_targets = [seed_directory + f for f in ['training_set_gold', 'insertables', 'deletables']]
+env.training_gold(training_gold_targets, [seed_directory + 'training_set_m2_5'])
+env.Alias('training_gold', training_gold_targets)
 
-env.training_gold([data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'], [data_directory + 'training_set_m2_5'])
+merged_external_corpus_target = [seed_directory + 'merged_training_corpora']
+env.merge_external_corpus(merged_external_corpus_target, [seed_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
+env.Alias('merged_corpus', merged_external_corpus_target)
 
-env.Alias('training_gold', [data_directory + 'training_set_gold', data_directory + 'insertables', data_directory + 'deletables'])
+pos_data_targets = [seed_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']]
+env.pos_data(pos_data_targets, [seed_directory + "merged_training_corpora"])
+env.Alias("pos_data", pos_data_targets)
 
-env.merge_external_corpus([data_directory + 'merged_training_corpora'], [data_directory + 'training_set_gold', 'segmented_tokenised_corpus_section.bz2'])
+pos_ngram_models_targets = [seed_directory + 'pos_ngram_model.arpa', seed_directory + 'closed_class_pos_ngram_model.arpa']
+env.pos_ngram_models(pos_ngram_models_targets, [seed_directory + 'pos_training_set', seed_directory + 'closed_class_pos_training_set'])
+env.Alias('pos_ngram_models', pos_ngram_models_targets)
 
-env.Alias('merged_corpus', [data_directory + 'merged_training_corpora'])
+vocabulary_files_targets = [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes]
+env.vocabulary_files(vocabulary_files_targets, [seed_directory + 'merged_training_corpora'])
+env.Alias('vocabulary_files', vocabulary_files_targets)
 
-env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'])
+trigram_models_targets = [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes]
+env.trigram_models(trigram_models_targets, [seed_directory + 'merged_training_corpora'] + [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.Alias('trigram_models', trigram_models_targets)
 
-env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+test_set_corrections_targets = [seed_directory + 'test_set_corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + '_width_' + str(width) +  '_error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.test_set_corrections(test_set_corrections_targets, [seed_directory + f for f in ['test_set', 'pos_dictionary', 'insertables', 'deletables', 'pos_ngram_model.arpa', 'closed_class_pos_ngram_model.arpa']] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('test_set_corrections', test_set_corrections_targets)
 
-env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'merged_training_corpora'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+corrections_targets = [seed_directory + 'corrections_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.corrections(corrections_targets, [seed_directory + 'development_set', seed_directory + 'pos_dictionary', seed_directory + 'insertables', seed_directory + 'deletables', seed_directory + 'pos_ngram_model.arpa', seed_directory + 'closed_class_pos_ngram_model.arpa'] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('corrections', corrections_targets)
 
-env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+scores_targets = [seed_directory + 'scores_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) if pos_weight else seed_directory + 'scores_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) for size in vocabulary_sizes]
+env.scores(scores_targets, [seed_directory + 'corrections_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_seed_' + str(seed) + '_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) for size in vocabulary_sizes])
+env.Alias('scores', scores_targets)
 
-env.pos_data([data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']], [data_directory + "merged_training_corpora"])
+env.integrated_scores([data_directory + 'integrated_scores'], scores_targets)
+env.Alias('integrated_scores', [data_directory + 'integrated_scores'])
 
-env.Alias("pos_data", [data_directory + target for target in ["pos_dictionary", "pos_training_set", 'closed_class_pos_training_set']])
+# Tell scons to put a db file (".sconsign.dblite") into each directory
+# to track the files in that directory rather than a single db file in
+# the top-level directory. This is important to avoid write-collisions
+# by concurrent scons processes from destroying the db file and
+# causing everything to rebuild the next time scons runs.
 
-env.pos_ngram_models([data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'], [data_directory + 'pos_training_set', data_directory + 'closed_class_pos_training_set'])
-
-env.Alias('pos_ngram_models', [data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'])
-
-env.corrections([data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'development_set', data_directory + 'pos_dictionary', data_directory + 'insertables', data_directory + 'deletables', data_directory + 'pos_ngram_model.arpa', data_directory + 'closed_class_pos_ngram_model.arpa'] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
-
-env.Alias('corrections', [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' +str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
-
-env.scores([data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes], [data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
-
-env.Alias('scores', [data_directory + 'scores_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else data_directory + 'scores_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes])
+env.SConsignFile(None)

@@ -13,7 +13,7 @@
 import sys, random
 
 class Randomiser():
-    def __init__(self, essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj):
+    def __init__(self, essay_file_obj, m2_file_obj, m2_5_file_obj, train_conll_file_obj, train_m2_file_obj, train_m2_5_file_obj, devel_conll_file_obj, devel_m2_file_obj, devel_m2_5_file_obj, rand_obj, proportion=.99):
         self.essay_file_obj = essay_file_obj
         self.m2_file_obj = m2_file_obj
         self.m2_5_file_obj = m2_5_file_obj
@@ -24,10 +24,11 @@ class Randomiser():
         self.devel_m2_file_obj = devel_m2_file_obj
         self.devel_m2_5_file_obj = devel_m2_5_file_obj
         self.rand_obj = rand_obj
+        self.proportion = proportion
 
     def choose_outfiles(self):
         x = self.rand_obj.random()
-        if x < .998: return self.train_conll_file_obj, self.train_m2_file_obj, self.train_m2_5_file_obj
+        if x < self.proportion: return self.train_conll_file_obj, self.train_m2_file_obj, self.train_m2_5_file_obj
         return self.devel_conll_file_obj, self.devel_m2_file_obj, self.devel_m2_5_file_obj
         
     def randomise(self):

@@ -4,7 +4,7 @@
 from code.language_modelling import SRILMServerPipe
 import unittest
 
-server_pipe = SRILMServerPipe.SRILMServerPipe('8888', 'code/language_modelling/test/closed_class_order_5.arpa', '5')
+server_pipe = SRILMServerPipe.SRILMServerPipe('code/language_modelling/test/closed_class_order_5.arpa', '5')
 
 class SRILMServerPipeTest(unittest.TestCase):
 

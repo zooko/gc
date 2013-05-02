@@ -1,7 +1,9 @@
 # L. Amber Wilcox-O'Hearn 2013
 # Corrector.py
 
-def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variation_generator, verbose=False):
+from math import log10
+
+def beam_search(tagged_tokens, width, prob_of_err, path_prob_func, variation_generator, verbose=False):
     """
     tagged_tokens is a list of tuples of tokens and tags.
     For each tuple in tagged_tokens, put all variations on every
@@ -10,6 +12,8 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
     A path is just a tuple of a log probability and a list of (token, tag) tuples.
     The log probability is a per word probability.
     """
+
+    prob_of_no_err = log10(1 - 10**prob_of_err)
 
     beam = [(0, [])]
     for i in range(len(tagged_tokens)):
@@ -21,7 +25,11 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
             path_avg_word_log_prob, path_tuples = path
             total_log_prob = path_avg_word_log_prob * len(path_tuples)
 
-            path_with_next_original_token = path_tuples + [tagged_tokens[i]]
+            # Capitalise if there was a deletion at the beginning.
+            if path_tuples == [] and tagged_tokens[i][0].islower():
+                path_with_next_original_token = path_tuples + [(tagged_tokens[i][0].title(), tagged_tokens[i][1])]
+            else:
+                path_with_next_original_token = path_tuples + [tagged_tokens[i]]
             if verbose:
                 print "Here I am with next token:", path_with_next_original_token
 
@@ -29,23 +37,27 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
             if verbose:
                 print "Here's my next_word_prob:", next_word_prob
 
-            avg_word_prob = (total_log_prob + next_word_prob) / len(path_with_next_original_token)
+            avg_word_prob = (total_log_prob + next_word_prob + prob_of_no_err) / len(path_with_next_original_token)
             if verbose:
                 print "Here's my new avg-word prob:", avg_word_prob
 
             new_beam.append( (avg_word_prob, path_with_next_original_token) )
 
-            for path_variation in variation_generator(path_with_next_original_token):
+            path_variations, path_error_terms = variation_generator(path_with_next_original_token, prob_of_err)
+            for j in range(len(path_variations)):
+                path_variation = path_variations[j]
+                path_error_term = path_error_terms[j]
                 assert path_variation != path_with_next_original_token, path_variation
                 if verbose:
                     print "I'm a variation:", path_variation
+                    print "This is my error term:", path_error_term
 
                 # If we had a deletion:
                 if path_variation == path_tuples:
 
                     # If this was not the first word:
                     if len(path_variation) > 0:
-                        avg_word_prob = (total_log_prob + prob_of_err_func()) / len(path_variation)
+                        avg_word_prob = (total_log_prob + path_error_term) / len(path_variation)
                         if verbose:
                             print "Here's my new avg-word prob:", avg_word_prob
 
@@ -65,13 +77,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
                     if verbose:
                         print "And here's my next word prob:", next_word_prob
 
-                    # If the last word is the original:
-                    if path_variation[-1] == tagged_tokens[i]:
-                        number_of_errors = 1
-                    else:
-                        number_of_errors = 2
-
-                    avg_word_prob = (total_log_prob + insertion_prob + next_word_prob + number_of_errors * prob_of_err_func()) / len(path_variation)
+                    avg_word_prob = (total_log_prob + insertion_prob + next_word_prob + path_error_term) / len(path_variation)
                     if verbose:
                         print "Here's my per-word prob:", avg_word_prob
 
@@ -81,7 +87,7 @@ def beam_search(tagged_tokens, width, prob_of_err_func, path_prob_func, variatio
                     if verbose:
                         print "And here's my next_word_prob:", next_word_prob
 
-                    avg_word_prob = (total_log_prob + next_word_prob + prob_of_err_func()) / len(path_variation)
+                    avg_word_prob = (total_log_prob + next_word_prob + path_error_term) / len(path_variation)
                     if verbose:
                         print "Here's my per-word prob:", avg_word_prob
 
@@ -109,9 +115,6 @@ class Corrector():
         self.closed_class_pos_ngram_server_obj = closed_class_pos_ngram_server_obj
         self.closed_class_tags = closed_class_tags
         self.AUX = AUX
-
-    def get_error_prob(self):
-       return self.error_prob
 
     def ngram_path_probability(self, path, pipe='t'):
        '''
@@ -200,7 +203,7 @@ class Corrector():
 
         if self.closed_class:
             assert not self.pos, "POS and closed class models can't both be set."
-            return beam_search(tokens, self.width, self.get_error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
+            return beam_search(tokens, self.width, self.error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
 
-        return beam_search(tokens, self.width, self.get_error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
+        return beam_search(tokens, self.width, self.error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
 
