@@ -8,11 +8,9 @@ del sys.modules['pickle']
 
 import os
 
-import nltk
-
 from contextlib import nested
 
-import codecs, contextlib, bz2, gzip, random, subprocess, json
+import codecs, bz2, gzip, random, subprocess, json
 from collections import defaultdict, Counter
 from BackOffTrigramModel import BackOffTrigramModelPipe
 
@@ -229,8 +227,6 @@ def statprof_correct(target, source, env):
 def real_correct(target, source, env):
 
     pos_dictionary = json.load(open_with_unicode(source[1].path, None, 'r'))
-    insertables =  json.load(open_with_unicode(source[2].path, None, 'r'))
-    deletables =  json.load(open_with_unicode(source[3].path, None, 'r'))
     pos_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[4].path, '5')
     closed_class_ngram_server_obj = SRILMServerPipe.SRILMServerPipe(source[5].path, '5')
     try:
@@ -531,7 +527,7 @@ trigram_models_targets = [seed_directory + 'trigram_model_' + str(size) + 'K.arp
 env.trigram_models(trigram_models_targets, [seed_directory + 'merged_training_corpora'] + [seed_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 env.Alias('trigram_models', trigram_models_targets)
 
-test_set_corrections_targets = [seed_directory + 'test_set_corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + 'error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + 'error_prob_' + str(error_probability) for size in vocabulary_sizes]
+test_set_corrections_targets = [seed_directory + 'test_set_corrections_trigram_model_size_' + str(size) + 'K_pos_weight_' + str(pos_weight) + '_width_' + str(width) +  '_error_prob_' + str(error_probability) if pos_weight else seed_directory + 'corrections_trigram_model_size_' + str(size) + 'K_closed_class_weight_' + str(closed_class_weight) + '_width_' + str(width) + '_error_prob_' + str(error_probability) for size in vocabulary_sizes]
 env.test_set_corrections(test_set_corrections_targets, [seed_directory + f for f in ['test_set', 'pos_dictionary', 'insertables', 'deletables', 'pos_ngram_model.arpa', 'closed_class_pos_ngram_model.arpa']] + [seed_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 env.Alias('test_set_corrections', test_set_corrections_targets)
 
