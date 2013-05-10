@@ -102,16 +102,18 @@ def beam_search(tagged_tokens, width, prob_of_err, path_prob_func, variation_gen
 
 class Corrector():
 
-    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=0, pos_ngram_server_obj=None, closed_class=0, closed_class_pos_ngram_server_obj=None, closed_class_tags=None, AUX=None):
+    def __init__(self, trigram_model_pipe, width, variation_generator, error_prob, verbose=False, pos=None, pos_ngram_server_obj=None, closed_class=None, closed_class_pos_ngram_server_obj=None, closed_class_tags=None, AUX=None):
+
+        assert (closed_class is None) != (pos is None), "Exactly one of POS and closed class models is required to be set. cc: %s p: %s, %s %s" % (closed_class, pos, closed_class is None, pos is None)
 
         self.trigram_model_pipe = trigram_model_pipe
         self.width = width
         self.variation_generator = variation_generator
         self.error_prob = error_prob
         self.verbose = verbose
-        self.pos = pos
+        self.pos_weight = pos
         self.pos_ngram_server_obj = pos_ngram_server_obj
-        self.closed_class = closed_class
+        self.closed_class_weight = closed_class
         self.closed_class_pos_ngram_server_obj = closed_class_pos_ngram_server_obj
         self.closed_class_tags = closed_class_tags
         self.AUX = AUX
@@ -169,41 +171,49 @@ class Corrector():
 
     def pos_ngram_path_probability(self, path):
 
-        if self.pos:
+        assert self.pos_weight is not None
+
+        if self.pos_weight > 0:
             tags = [p[1] for p in path]
-            pos_prob = self.ngram_path_probability(tags, pipe='p')
+            log_pos_prob = self.ngram_path_probability(tags, pipe='p')
+            if self.pos_weight == 1:
+                return log_pos_prob
+            trigram_prob = self.ngram_path_probability([p[0] for p in path])
+
+            return log10( 10**(log10(self.pos_weight) + log_pos_prob) +  10**(log10(1-self.pos_weight) + trigram_prob) )
+
         else:
-            pos_prob = 0
-        if self.pos == 1:
-            return pos_prob
-
-        return self.pos * pos_prob + (1-self.pos) * self.ngram_path_probability([p[0] for p in path])
-
+            assert self.pos_weight == 0, self.pos_weight
+            return self.ngram_path_probability([p[0] for p in path]) 
+    
     def closed_class_pos_ngram_path_probability(self, path):
 
-        if self.closed_class:
+        assert self.closed_class_weight is not None
+
+        if self.closed_class_weight > 0:
             closed_class_path = [p[0].lower() if (p[1] in self.closed_class_tags or p[0] in self.AUX) else p[1] for p in path]
-            closed_class_prob = self.ngram_path_probability(closed_class_path, pipe='c')
-            assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s -- closed_class_path: %s" % (closed_class_prob, type(closed_class_prob), closed_class_path)
+            log_closed_class_prob = self.ngram_path_probability(closed_class_path, pipe='c')
+            assert isinstance(log_closed_class_prob, (int, float, long)), "%r :: %s -- closed_class_path: %s" % (log_closed_class_prob, type(log_closed_class_prob), closed_class_path)
+            if self.closed_class_weight == 1:
+                return log_closed_class_prob
+            assert isinstance(self.closed_class_weight, (int, float, long)), "%r :: %s" % (self.closed_class_weight, type(self.closed_class_weight))
+            assert isinstance(log_closed_class_prob, (int, float, long)), "%r :: %s" % (log_closed_class_prob, type(log_closed_class_prob))
+    
+            trigram_prob = self.ngram_path_probability([p[0] for p in path])
+            assert isinstance(trigram_prob, (int, float, long)), "%r :: %s" % (trigram_prob, type(trigram_prob))
+
+            return log10( 10**(log10(self.closed_class_weight) + log_closed_class_prob) +  10**(log10(1-self.closed_class_weight) + trigram_prob) )
+
         else:
-            closed_class_prob = 0
-
-        if self.closed_class == 1:
-            return closed_class_prob
-
-        assert isinstance(self.closed_class, (int, float, long)), "%r :: %s" % (self.closed_class, type(self.closed_class))
-        assert isinstance(closed_class_prob, (int, float, long)), "%r :: %s" % (closed_class_prob, type(closed_class_prob))
-
-        x = self.ngram_path_probability([p[0] for p in path])
-        assert isinstance(x, (int, float, long)), "%r :: %s" % (x, type(x))
-
-        return self.closed_class * closed_class_prob + (1-self.closed_class) * x
+            assert self.closed_class_weight == 0, self.closed_class_weight 
+            return self.ngram_path_probability([p[0] for p in path])
 
     def get_correction(self, tokens):
 
-        if self.closed_class:
-            assert not self.pos, "POS and closed class models can't both be set."
+        if self.closed_class_weight is not None:
+            assert self.pos_weight is None, "POS and closed class models can't both be set."
             return beam_search(tokens, self.width, self.error_prob, self.closed_class_pos_ngram_path_probability, self.variation_generator, self.verbose)
 
+        assert self.pos_weight is not None
         return beam_search(tokens, self.width, self.error_prob, self.pos_ngram_path_probability, self.variation_generator, self.verbose)
 
